@@ -1,27 +1,61 @@
-import { createContext, useState } from 'react';
+import { createContext, useState, useEffect } from "react";
+import { login } from "../api/auth";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+    const storedUser = localStorage.getItem("authUser");
+    return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  const loginUser = ({ user: u, company, token }) => {
-    const apiBase = `http://${company.schema_name}.localhost:8000/api`;
-    const userData = { ...u, company, token, apiBase };
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const [token, setToken] = useState(localStorage.getItem("authToken") || null);
+  const [tenantSchema, setTenantSchema] = useState(localStorage.getItem("tenantSchema") || null);
+
+  // Optionally: fetch user profile if token exists
+  useEffect(() => {
+    if (token && !user) {
+      // e.g., fetch("/me") → setUser()
+    }
+  }, [token, user]);
+
+  const handleLogin = async (credentials) => {
+    const res = await login(credentials);
+
+    const { user, token, company } = res.data;
+
+    setUser(user);
+    setToken(token);
+    setTenantSchema(company.schema);
+
+    // Persist in localStorage
+    localStorage.setItem("authUser", JSON.stringify(user));
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("tenantSchema", company.schema);
+
+    return res;
   };
 
-  const logout = () => {
+  const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    setToken(null);
+    setTenantSchema(null);
+
+    localStorage.removeItem("authUser");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("tenantSchema");
   };
 
   return (
-    <AuthContext.Provider value={{ user, loginUser, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        tenantSchema,
+        handleLogin,
+        handleLogout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

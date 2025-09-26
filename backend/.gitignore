@@ -1,0 +1,50 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.pyd
+
+# Django stuff
+*.log
+*.pot
+*.pyc
+*.mo
+db.sqlite3
+media/
+
+# Django migrations (optional – usually you keep these)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Environment variables
+.env
+*.env
+
+# VSCode / PyCharm / IDEs
+.vscode/
+.idea/
+
+# Byte-compiled / cache
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Static files (collected)
+staticfiles/
+static/
+
+# Coverage / testing
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+
+# Docker
+*.pid
+*.seed
+*.pid.lock

@@ -1,7 +1,6 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signup } from '../api/auth';
-import { AuthContext } from '../context/AuthContext';
 import { FaUser, FaEnvelope, FaLock, FaBuilding } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
@@ -16,7 +15,6 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { loginUser } = useContext(AuthContext);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,31 +26,11 @@ export default function Signup() {
 
     try {
       const res = await signup(formData);
-
-      // Store tenantDomain in localStorage for future API calls
-      if (res.data.company?.domain) {
-        localStorage.setItem('tenantDomain', res.data.company.domain);
-      }
-
-      // Store user + company + token in context
-      loginUser({
-        user: res.data.user,
-        company: res.data.company,
-        token: res.data.token,
-      });
-
-      // Redirect based on company type
-      if (res.data.company.company_type === 'SME') {
-        navigate('/sme-dashboard');
-      } else {
-        navigate('/school-dashboard');
-      }
+      navigate('/login');
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.error ||
-        err.response?.data?.detail ||
-        'Signup failed';
-      setError(errorMsg);
+      setError(
+        err.response?.data?.message || err.response?.data?.error || 'Signup failed'
+      );
     } finally {
       setLoading(false);
     }
@@ -67,9 +45,7 @@ export default function Signup() {
         onSubmit={handleSubmit}
         className="bg-white p-10 rounded-xl shadow-lg w-96"
       >
-        <h2 className="text-3xl font-bold text-center mb-6 text-purple-600">
-          Signup
-        </h2>
+        <h2 className="text-3xl font-bold text-center mb-6 text-purple-600">Signup</h2>
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
 
         {/* Username */}
@@ -140,7 +116,6 @@ export default function Signup() {
           </select>
         </div>
 
-        {/* Submit */}
         <button
           type="submit"
           disabled={loading}

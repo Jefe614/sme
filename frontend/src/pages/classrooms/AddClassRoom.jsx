@@ -1,5 +1,5 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Form,
   Input,
@@ -11,10 +11,9 @@ import {
   Typography,
   Switch,
   Divider,
-} from 'antd';
-import { SaveOutlined } from '@ant-design/icons';
-import { AuthContext } from '../../context/AuthContext';
-import { createClass } from '../../api/auth';
+} from "antd";
+import { SaveOutlined } from "@ant-design/icons";
+import { createClass, getTeachers } from "../../api/auth";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -24,26 +23,26 @@ export default function CreateClassPage() {
   const [form] = Form.useForm();
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const gradeLevels = [
-    { value: 'pre-school', label: 'Pre-School' },
-    { value: 'grade-1', label: 'Grade 1' },
-    { value: 'grade-2', label: 'Grade 2' },
-    { value: 'grade-3', label: 'Grade 3' },
-    { value: 'grade-4', label: 'Grade 4' },
-    { value: 'grade-5', label: 'Grade 5' },
-    { value: 'grade-6', label: 'Grade 6' },
-    { value: 'grade-7', label: 'Grade 7' },
-    { value: 'grade-8', label: 'Grade 8' },
-    { value: 'form-1', label: 'Form 1' },
-    { value: 'form-2', label: 'Form 2' },
-    { value: 'form-3', label: 'Form 3' },
-    { value: 'form-4', label: 'Form 4' },
+    { value: "pre-school", label: "Pre-School" },
+    { value: "grade-1", label: "Grade 1" },
+    { value: "grade-2", label: "Grade 2" },
+    { value: "grade-3", label: "Grade 3" },
+    { value: "grade-4", label: "Grade 4" },
+    { value: "grade-5", label: "Grade 5" },
+    { value: "grade-6", label: "Grade 6" },
+    { value: "grade-7", label: "Grade 7" },
+    { value: "grade-8", label: "Grade 8" },
+    { value: "form-1", label: "Form 1" },
+    { value: "form-2", label: "Form 2" },
+    { value: "form-3", label: "Form 3" },
+    { value: "form-4", label: "Form 4" },
   ];
-  const sections = ['A', 'B', 'C', 'D', 'E', 'F'];
-  const academicYears = ['2023-2024', '2024-2025', '2025-2026'];
+
+  const sections = ["A", "B", "C", "D", "E", "F"];
+  const academicYears = ["2023-2024", "2024-2025", "2025-2026"];
 
   useEffect(() => {
     fetchTeachers();
@@ -51,25 +50,23 @@ export default function CreateClassPage() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/teachers/`, {
-        headers: { Authorization: `Token ${user.token}` },
-      });
+      const response = await getTeachers();
       setTeachers(response.data);
     } catch (error) {
-      console.error('Error fetching teachers:', error);
-      message.error('Failed to load teachers');
+      console.error("Error fetching teachers:", error);
+      message.error("Failed to load teachers");
     }
   };
 
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
-      await createClass(values, user.token);
-      message.success('Class created successfully!');
-      navigate('/classes');
+      await createClass(values);
+      message.success("Class created successfully!");
+      navigate("/school-dashboard/classrooms");
     } catch (error) {
-      console.error('Error saving class:', error);
-      const errorMsg = error.response?.data?.error || 'Failed to save class';
+      console.error("Error saving class:", error);
+      const errorMsg = error.response?.data?.error || "Failed to save class";
       message.error(errorMsg);
     } finally {
       setLoading(false);
@@ -78,6 +75,7 @@ export default function CreateClassPage() {
 
   return (
     <div className="p-6">
+      {/* Page Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <Title level={2} className="!mb-2">
@@ -90,6 +88,7 @@ export default function CreateClassPage() {
         </Link>
       </div>
 
+      {/* Form */}
       <Form
         form={form}
         layout="vertical"
@@ -97,16 +96,17 @@ export default function CreateClassPage() {
         initialValues={{
           max_students: 40,
           is_active: true,
-          academic_year: '2024-2025',
-          section: 'A',
+          academic_year: "2024-2025",
+          section: "A",
         }}
       >
         <Row gutter={[16, 16]}>
+          {/* Grade Level */}
           <Col xs={24} sm={12}>
             <Form.Item
               name="grade_level"
               label="Grade Level"
-              rules={[{ required: true, message: 'Please select grade level' }]}
+              rules={[{ required: true, message: "Please select grade level" }]}
             >
               <Select placeholder="Select grade level" size="large">
                 {gradeLevels.map((grade) => (
@@ -118,11 +118,12 @@ export default function CreateClassPage() {
             </Form.Item>
           </Col>
 
+          {/* Section */}
           <Col xs={24} sm={12}>
             <Form.Item
               name="section"
               label="Section"
-              rules={[{ required: true, message: 'Please select section' }]}
+              rules={[{ required: true, message: "Please select section" }]}
             >
               <Select placeholder="Select section" size="large">
                 {sections.map((section) => (
@@ -134,11 +135,12 @@ export default function CreateClassPage() {
             </Form.Item>
           </Col>
 
+          {/* Academic Year */}
           <Col xs={24} sm={12}>
             <Form.Item
               name="academic_year"
               label="Academic Year"
-              rules={[{ required: true, message: 'Please enter academic year' }]}
+              rules={[{ required: true, message: "Please enter academic year" }]}
             >
               <Select placeholder="Select academic year" size="large">
                 {academicYears.map((year) => (
@@ -150,16 +152,18 @@ export default function CreateClassPage() {
             </Form.Item>
           </Col>
 
+          {/* Max Students */}
           <Col xs={24} sm={12}>
             <Form.Item
               name="max_students"
               label="Maximum Students"
-              rules={[{ required: true, message: 'Please enter maximum students' }]}
+              rules={[{ required: true, message: "Please enter maximum students" }]}
             >
               <Input type="number" min="1" max="60" size="large" />
             </Form.Item>
           </Col>
 
+          {/* Class Teacher */}
           <Col xs={24} sm={12}>
             <Form.Item name="class_teacher" label="Class Teacher">
               <Select
@@ -181,18 +185,21 @@ export default function CreateClassPage() {
             </Form.Item>
           </Col>
 
+          {/* Room Number */}
           <Col xs={24} sm={12}>
             <Form.Item name="room_number" label="Room Number">
               <Input placeholder="e.g., Room 101" size="large" />
             </Form.Item>
           </Col>
 
+          {/* Curriculum */}
           <Col xs={24}>
             <Form.Item name="curriculum" label="Curriculum">
               <Input placeholder="e.g., CBC, 8-4-4, IGCSE" size="large" />
             </Form.Item>
           </Col>
 
+          {/* Schedule Notes */}
           <Col xs={24}>
             <Form.Item name="class_schedule" label="Class Schedule Notes">
               <TextArea
@@ -204,13 +211,23 @@ export default function CreateClassPage() {
             </Form.Item>
           </Col>
 
+          {/* Active Status */}
           <Col xs={24}>
-            <Form.Item name="is_active" label="Active Status" valuePropName="checked">
-              <Switch checkedChildren="Active" unCheckedChildren="Inactive" defaultChecked />
+            <Form.Item
+              name="is_active"
+              label="Active Status"
+              valuePropName="checked"
+            >
+              <Switch
+                checkedChildren="Active"
+                unCheckedChildren="Inactive"
+                defaultChecked
+              />
             </Form.Item>
           </Col>
         </Row>
 
+        {/* Submit */}
         <Divider />
         <div className="flex justify-end space-x-3">
           <Link to="/school-dashboard/classrooms">
