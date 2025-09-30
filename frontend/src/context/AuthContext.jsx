@@ -19,22 +19,27 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token, user]);
 
-  const handleLogin = async (credentials) => {
-    const res = await login(credentials);
+ const handleLogin = async (credentials) => {
+  const tenantSchema = localStorage.getItem("tenantSchema") || null;
 
-    const { user, token, company } = res.data;
+  const res = await login({
+    ...credentials,
+    schema: tenantSchema,
+  });
 
-    setUser(user);
-    setToken(token);
-    setTenantSchema(company.schema);
+  const { user, token, company } = res.data;
 
-    // Persist in localStorage
-    localStorage.setItem("authUser", JSON.stringify(user));
-    localStorage.setItem("authToken", token);
-    localStorage.setItem("tenantSchema", company.schema);
+  setUser(user);
+  setToken(token);
+  setTenantSchema(company.schema);
 
-    return res;
-  };
+  localStorage.setItem("authUser", JSON.stringify(user));
+  localStorage.setItem("authToken", token);
+  localStorage.setItem("tenantSchema", company.schema);
+
+  return res;
+};
+
 
   const handleLogout = () => {
     setUser(null);

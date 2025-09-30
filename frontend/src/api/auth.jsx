@@ -10,11 +10,14 @@ export const signup = (data) =>
   axios.post(`${API_PUBLIC_BASE}/signup/`, data);
 
 export const login = (data) =>
-  axios.post(`${API_PUBLIC_BASE}/login/`, data);
+  axios.post(`${API_PUBLIC_BASE}/login/`, data, {
+    headers: { "Content-Type": "application/json" },
+  });
+
 
 
 
 // ✅ Tenant endpoints (auto pick schema from apiClient)
 export const getTeachers = () => api.get("/teachers/");
-export const createClass = (data) => api.post("/classes/", data);
-export const getClasses = () => api.get("/classes/");
+export const createClass = (data) => api.post("/classes", data);
+export const getClasses = () => api.get("/classes");

@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Card, Row, Col, Statistic, Button, Badge, Alert, Typography, Space, Spin } from 'antd';
+import { Card, Row, Col, Statistic, Button, Badge, Alert, Typography, Space } from 'antd';
 import { 
   UserOutlined,
   TeamOutlined,
@@ -15,7 +15,7 @@ import {
   HomeOutlined,
   ApartmentOutlined,
 } from '@ant-design/icons';
-import axios from 'axios';
+import api from '../api/apiClient'; // Import the custom API client
 import { Line, Doughnut } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, 
@@ -32,8 +32,6 @@ import {
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, ChartTitle, Tooltip, Legend, ArcElement);
 
 const { Title: AntTitle, Text } = Typography;
-
-const BASE_API = import.meta.env.VITE_BASE_API || 'http://localhost:8000';
 
 export default function SchoolDashboard() {
   const { user, logout } = useContext(AuthContext);
@@ -58,18 +56,15 @@ export default function SchoolDashboard() {
   });
   const [recentActivities, setRecentActivities] = useState([]);
   const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        setLoading(true);
         setError(null);
         
-        const res = await axios.get(`${BASE_API}/api/school-dashboard-summary/`, {
-          headers: { Authorization: `Token ${user.token}` },
-        });
+        // Use the custom API client from apiClient.js
+        const res = await api.get('/school-dashboard-summary/');
         
         // Set all data from API response
         if (res.data.stats) {
@@ -93,9 +88,7 @@ export default function SchoolDashboard() {
         
       } catch (err) {
         console.error('Dashboard API error:', err);
-        // setError('Failed to load dashboard data. Please try again.');
-      } finally {
-        setLoading(false);
+        setError('Failed to load dashboard data. Please try again.');
       }
     }
     
@@ -253,30 +246,7 @@ export default function SchoolDashboard() {
     { title: 'Generate Report', icon: <FileTextOutlined />, color: '#faad14' },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert
-        message="Error"
-        description={error}
-        type="error"
-        showIcon
-        action={
-          <Button size="small" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        }
-      />
-    );
-  }
-
+  // Render the dashboard regardless of loading state
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -305,6 +275,21 @@ export default function SchoolDashboard() {
       </div>
 
       {/* Alerts */}
+      {error && (
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          showIcon
+          action={
+            <Button size="small" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          }
+          className="mb-6"
+        />
+      )}
+
       {alerts.length > 0 && (
         <Alert
           message="Attention Required"
