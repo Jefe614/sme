@@ -1,3 +1,4 @@
+// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -10,6 +11,9 @@ import StudentCreationPage from './pages/students/AddStudents';
 import StudentsListPage from './pages/students/ViewStudents';
 import ClassManagementPage from './pages/classrooms/ViewClassroom';
 import CreateClassPage from './pages/classrooms/AddClassRoom';
+import StaffManagementPage from './pages/staff/StaffManagementPage';
+import CreateStaffPage from './pages/staff/CreateStaffPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -43,10 +47,16 @@ function App() {
                 <DashboardSidebarLayout userType="School">
                   <Routes>
                     <Route index element={<SchoolDashboard />} />
+                    <Route path ="*" element={<NotFoundPage />} />
                     <Route path="add/students" element={<StudentCreationPage />} />
                     <Route path="students" element={<StudentsListPage />} />
                     <Route path="classrooms" element={<ClassManagementPage />} />
                     <Route path="add/classrooms" element={<CreateClassPage />} />
+                    <Route path="staff" element={<StaffManagementPage />} />
+                    <Route path="teachers" element={<StaffManagementPage />} />
+                    <Route path="staff/add" element={<CreateStaffPage />} />
+                    <Route path="staff/edit/:id" element={<CreateStaffPage />} />
+
                     {/* Add other School sub-routes here */}
                   </Routes>
                 </DashboardSidebarLayout>

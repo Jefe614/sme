@@ -14,7 +14,7 @@ import {
 } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { createClass, getTeachers } from "../../api/auth";
-
+import Swal from "sweetalert2";
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
@@ -58,20 +58,38 @@ export default function CreateClassPage() {
     }
   };
 
-  const handleSubmit = async (values) => {
-    setLoading(true);
-    try {
-      await createClass(values);
-      message.success("Class created successfully!");
-      navigate("/school-dashboard/classrooms");
-    } catch (error) {
-      console.error("Error saving class:", error);
-      const errorMsg = error.response?.data?.error || "Failed to save class";
-      message.error(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleSubmit = async (values) => {
+  setLoading(true);
+  try {
+    console.log("Form Values:", values);
+    const response = await createClass(values);
+    console.log("API Response:", response);
+    await Swal.fire({
+      title: "Success!",
+      text: "Class created successfully!",
+      icon: "success",
+      confirmButtonText: "OK",
+      width: "600px",
+      padding: "2em",
+      customClass: {
+        popup: "large-success-modal",
+      },
+      showConfirmButton: true,
+    });
+    navigate("/school-dashboard/classrooms");
+  } catch (error) {
+    console.error("Error saving class:", error);
+    const errorMsg = error.response?.data?.error || "Failed to save class";
+    Swal.fire({
+      title: "Error",
+      text: errorMsg,
+      icon: "error",
+      confirmButtonText: "OK",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="p-6">

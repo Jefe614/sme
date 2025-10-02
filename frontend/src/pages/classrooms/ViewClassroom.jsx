@@ -1,4 +1,3 @@
-// src/pages/classes/ClassManagementPage.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -7,17 +6,14 @@ import {
   Table,
   Tag,
   Modal,
-  message,
   Typography,
   Switch,
   Space,
   Popconfirm,
   Tooltip,
   Avatar,
-  List,
+  Descriptions,
   Divider,
-  Row,
-  Col,
 } from "antd";
 import {
   PlusOutlined,
@@ -28,9 +24,14 @@ import {
   HomeOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
-
-import { getClasses, getTeachers } from "../../api/auth"; // reuse api helpers
-import api from "../../api/apiClient"; // for students + delete
+import Swal from "sweetalert2";
+import {
+  getClasses,
+  getTeachers,
+  getClassStudents,
+  deleteClass,
+  updateClassStatus,
+} from "../../api/auth";
 
 const { Title, Text } = Typography;
 
@@ -72,7 +73,13 @@ export default function ClassManagementPage() {
       setClasses(data);
     } catch (error) {
       console.error("Error fetching classes:", error);
-      message.error("Failed to load classes");
+      Swal.fire({
+        title: "Error",
+        text: "Failed to load classes",
+        icon: "error",
+        confirmButtonText: "OK",
+        width: "600px",
+      });
     } finally {
       setLoading(false);
     }
@@ -84,18 +91,30 @@ export default function ClassManagementPage() {
       setTeachers(data);
     } catch (error) {
       console.error("Error fetching teachers:", error);
-      message.error("Failed to load teachers");
+      Swal.fire({
+        title: "Error",
+        text: "Failed to load teachers",
+        icon: "error",
+        confirmButtonText: "OK",
+        width: "600px",
+      });
     }
   };
 
   const fetchClassStudents = async (classId) => {
     setStudentsLoading(true);
     try {
-      const { data } = await api.get(`/students/?class_id=${classId}`);
+      const { data } = await getClassStudents(classId);
       setStudents(data);
     } catch (error) {
       console.error("Error fetching students:", error);
-      message.error("Failed to load students");
+      Swal.fire({
+        title: "Error",
+        text: "Failed to load students",
+        icon: "error",
+        confirmButtonText: "OK",
+        width: "600px",
+      });
     } finally {
       setStudentsLoading(false);
     }
@@ -109,30 +128,57 @@ export default function ClassManagementPage() {
 
   const handleDelete = async (classId) => {
     try {
-      await api.delete(`/classes/${classId}/`);
-      message.success("Class deleted successfully!");
+      await deleteClass(classId);
+      await Swal.fire({
+        title: "Success!",
+        text: "Class deleted successfully!",
+        icon: "success",
+        confirmButtonText: "OK",
+        width: "600px",
+        timer: 2000,
+        timerProgressBar: true,
+        customClass: { popup: "large-success-modal" },
+      });
       fetchClasses();
     } catch (error) {
       console.error("Error deleting class:", error);
-      message.error(
-        error.response?.data?.message ||
-          "Failed to delete class. There might be students assigned to it."
-      );
+      Swal.fire({
+        title: "Error",
+        text:
+          error.response?.data?.message ||
+          "Failed to delete class. There might be students assigned to it.",
+        icon: "error",
+        confirmButtonText: "OK",
+        width: "600px",
+      });
     }
   };
 
   const handleStatusToggle = async (classRecord) => {
     try {
-      await api.patch(`/classes/${classRecord.id}/`, {
-        is_active: !classRecord.is_active,
+      await updateClassStatus(classRecord.id, !classRecord.is_active);
+      await Swal.fire({
+        title: "Success!",
+        text: `Class ${
+          classRecord.is_active ? "deactivated" : "activated"
+        } successfully!`,
+        icon: "success",
+        confirmButtonText: "OK",
+        width: "600px",
+        timer: 2000,
+        timerProgressBar: true,
+        customClass: { popup: "large-success-modal" },
       });
-      message.success(
-        `Class ${classRecord.is_active ? "deactivated" : "activated"} successfully!`
-      );
       fetchClasses();
     } catch (error) {
       console.error("Error updating class status:", error);
-      message.error("Failed to update class status");
+      Swal.fire({
+        title: "Error",
+        text: "Failed to update class status",
+        icon: "error",
+        confirmButtonText: "OK",
+        width: "600px",
+      });
     }
   };
 
@@ -267,6 +313,42 @@ export default function ClassManagementPage() {
     },
   ];
 
+  const studentColumns = [
+    {
+      title: "Name",
+      key: "name",
+      render: (_, record) => (
+        <Space>
+          <Avatar icon={<UserOutlined />} />
+          {`${record.first_name} ${record.last_name}`}
+        </Space>
+      ),
+    },
+    {
+      title: "Admission Number",
+      dataIndex: "admission_number",
+      key: "admission_number",
+    },
+    {
+      title: "Type",
+      dataIndex: "student_type",
+      key: "student_type",
+      render: (type) => <Tag>{type}</Tag>,
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={() => navigate(`/students/edit/${record.id}`)}
+        >
+          View Profile
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -305,8 +387,8 @@ export default function ClassManagementPage() {
       <Modal
         title={
           <Space>
-            <TeamOutlined />
-            Class Details - {selectedClass?.name}
+            <TeamOutlined style={{ color: "#1890ff" }} />
+            <Text strong>Class Details - {selectedClass?.name}</Text>
           </Space>
         }
         open={viewModalVisible}
@@ -326,96 +408,91 @@ export default function ClassManagementPage() {
           >
             Close
           </Button>,
+          <Button
+            key="edit"
+            type="primary"
+            onClick={() => {
+              setViewModalVisible(false);
+              navigate(`/classes/edit/${selectedClass?.id}`);
+            }}
+          >
+            Edit Class
+          </Button>,
         ]}
-        width={800}
+        width="80%"
+        style={{ maxWidth: 800 }}
+        className="class-details-modal"
       >
         {selectedClass && (
           <div>
-            <Row gutter={[16, 16]} className="mb-6">
-              <Col span={8}>
-                <Text strong>Grade Level:</Text>
-                <br />
-                <Tag color="blue">
-                  {gradeLevels.find(
-                    (g) => g.value === selectedClass.grade_level
-                  )?.label || selectedClass.grade_level}
-                </Tag>
-              </Col>
-              <Col span={8}>
-                <Text strong>Section:</Text>
-                <br />
-                <Tag color="geekblue">Section {selectedClass.section}</Tag>
-              </Col>
-              <Col span={8}>
-                <Text strong>Academic Year:</Text>
-                <br />
-                <Tag color="orange">{selectedClass.academic_year}</Tag>
-              </Col>
-              <Col span={8}>
-                <Text strong>Room Number:</Text>
-                <br />
-                <Text>{selectedClass.room_number || "Not assigned"}</Text>
-              </Col>
-              <Col span={8}>
-                <Text strong>Class Teacher:</Text>
-                <br />
-                {selectedClass.class_teacher ? (
-                  <Space>
-                    <Avatar size="small" icon={<UserOutlined />} />
-                    <Text>
-                      {selectedClass.class_teacher.first_name}{" "}
-                      {selectedClass.class_teacher.last_name}
-                    </Text>
-                  </Space>
-                ) : (
-                  <Text type="secondary">Not assigned</Text>
-                )}
-              </Col>
-              <Col span={8}>
-                <Text strong>Student Capacity:</Text>
-                <br />
-                <Tag
-                  color={
-                    selectedClass.current_strength >=
-                    selectedClass.max_students
-                      ? "red"
-                      : "green"
-                  }
-                >
-                  {selectedClass.current_strength || 0}/
-                  {selectedClass.max_students}
-                </Tag>
-              </Col>
-              <Col span={24}>
-                <Text strong>Curriculum:</Text>
-                <br />
-                <Text>{selectedClass.curriculum || "Not specified"}</Text>
-              </Col>
-            </Row>
-
-            <Divider>Students in this Class</Divider>
-
-            <List
-              loading={studentsLoading}
-              dataSource={students}
-              renderItem={(student) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar icon={<UserOutlined />} />}
-                    title={`${student.first_name} ${student.last_name}`}
-                    description={
-                      <Space>
-                        <Text>Admission: {student.admission_number}</Text>
-                        <Text>
-                          Type: <Tag size="small">{student.student_type}</Tag>
-                        </Text>
-                      </Space>
+            <Card className="mb-4">
+              <Descriptions
+                title="Class Information"
+                bordered
+                column={{ xs: 1, sm: 2 }}
+                labelStyle={{ fontWeight: "bold" }}
+              >
+                <Descriptions.Item label="Grade Level">
+                  <Tag color="blue">
+                    {gradeLevels.find(
+                      (g) => g.value === selectedClass.grade_level
+                    )?.label || selectedClass.grade_level}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Section">
+                  <Tag color="geekblue">Section {selectedClass.section}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Academic Year">
+                  <Tag color="orange">{selectedClass.academic_year}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Room Number">
+                  {selectedClass.room_number || "Not assigned"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Class Teacher">
+                  {selectedClass.class_teacher ? (
+                    <Space>
+                      <Avatar size="small" icon={<UserOutlined />} />
+                      {`${selectedClass.class_teacher.first_name} ${selectedClass.class_teacher.last_name}`}
+                    </Space>
+                  ) : (
+                    <Text type="secondary">Not assigned</Text>
+                  )}
+                </Descriptions.Item>
+                <Descriptions.Item label="Student Capacity">
+                  <Tag
+                    color={
+                      selectedClass.current_strength >=
+                      selectedClass.max_students
+                        ? "red"
+                        : "green"
                     }
-                  />
-                </List.Item>
-              )}
-              locale={{ emptyText: "No students assigned to this class" }}
-            />
+                  >
+                    {selectedClass.current_strength || 0}/
+                    {selectedClass.max_students}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Curriculum" span={2}>
+                  {selectedClass.curriculum || "Not specified"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Schedule Notes" span={2}>
+                  {selectedClass.class_schedule?.length > 0
+                    ? selectedClass.class_schedule.join(", ")
+                    : "Not specified"}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Card title="Students in this Class">
+              <Table
+                columns={studentColumns}
+                dataSource={students}
+                rowKey="id"
+                loading={studentsLoading}
+                locale={{ emptyText: "No students assigned to this class" }}
+                pagination={false}
+                size="small"
+              />
+            </Card>
           </div>
         )}
       </Modal>

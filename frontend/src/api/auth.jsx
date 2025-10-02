@@ -21,3 +21,15 @@ export const login = (data) =>
 export const getTeachers = () => api.get("/teachers/");
 export const createClass = (data) => api.post("/classes", data);
 export const getClasses = () => api.get("/classes");
+export const getClassStudents = (classId) => api.get(`/students/?class_id=${classId}`);
+export const deleteClass = (classId) => api.delete(`/classes/${classId}/`);
+export const updateClassStatus = (classId, isActive) =>
+  api.patch(`/classes/${classId}/`, { is_active: isActive });
+
+export const getStaff = () => api.get("/staff/");
+export const getStaffById = (staffId) => api.get(`/staff/${staffId}/`);
+export const createStaff = (data) => api.post("/staff/", data);
+export const updateStaff = (staffId, data) => api.patch(`/staff/${staffId}/`, data);
+export const deleteStaff = (staffId) => api.delete(`/staff/${staffId}/`);
+export const getSubjects = () => api.get("/subjects/");
+
