@@ -12,6 +12,7 @@ import {
   Popconfirm,
   Tooltip,
   Avatar,
+  message,
 } from "antd";
 import {
   PlusOutlined,
@@ -33,13 +34,33 @@ export default function StaffManagementPage() {
 
   useEffect(() => {
     fetchStaff();
-  }, []);
+  }, [isTeacherRoute]);
 
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const { data } = await getStaff();
-      setStaff(isTeacherRoute ? data.filter(s => s.staff_type === "teaching") : data);
+      const response = await getStaff();
+      console.log("API Response:", response);
+      
+      // Handle the actual API response structure - staff is in response.data.staff
+      let staffData = [];
+      
+      if (response && response.data && Array.isArray(response.data.staff)) {
+        staffData = response.data.staff;
+      } else if (Array.isArray(response)) {
+        staffData = response;
+      } else if (response && Array.isArray(response.data)) {
+        staffData = response.data;
+      }
+      
+      console.log("Processed staff data:", staffData);
+      
+      // Filter for teachers if on teacher route
+      const filteredStaff = isTeacherRoute 
+        ? staffData.filter(s => s.staff_type === "teaching") 
+        : staffData;
+      
+      setStaff(filteredStaff);
     } catch (error) {
       console.error("Error fetching staff:", error);
       Swal.fire({
@@ -55,33 +76,30 @@ export default function StaffManagementPage() {
     }
   };
 
-  const handleDelete = async (staffId) => {
-    try {
-      await deleteStaff(staffId);
-      await Swal.fire({
-        title: "Success!",
-        text: "Staff deleted successfully!",
-        icon: "success",
-        confirmButtonText: "OK",
-        width: "600px",
-        timer: 2000,
-        timerProgressBar: true,
-        customClass: { popup: "large-success-modal" },
-      });
-      fetchStaff();
-    } catch (error) {
-      console.error("Error deleting staff:", error);
-      Swal.fire({
-        title: "Error",
-        text: error.response?.data?.message || "Failed to delete staff",
-        icon: "error",
-        confirmButtonText: "OK",
-        width: "600px",
-        customClass: { popup: "large-success-modal" },
-      });
-    }
-  };
+  const handleDelete = async (id) => {
+  console.log("Deleting staff with ID:", id); // Debug log
+  
+  if (!id) {
+    console.error("Staff ID is undefined or null");
+    // You can show a small notification instead of Swal
+    message.error("Invalid staff ID");
+    return;
+  }
 
+  try {
+    await deleteStaff(id);
+    // Remove the Swal.fire success notification
+    // The Popconfirm already handled the confirmation
+    fetchStaff(); // Just refresh the staff list
+  } catch (error) {
+    console.error("Error deleting staff:", error);
+    console.error("Full error response:", error.response);
+    
+    const errorMessage = error.response?.data?.error || error.message || "Failed to delete staff";
+    
+    message.error(errorMessage);
+  }
+};
   const handleStatusToggle = async (staff) => {
     try {
       await updateStaff(staff.id, { is_active: !staff.is_active });
@@ -109,39 +127,111 @@ export default function StaffManagementPage() {
     }
   };
 
+  const getStaffRoleDisplay = (role) => {
+    const roleMap = {
+      'teacher': 'Teacher',
+      'head_teacher': 'Head Teacher',
+      'deputy_head': 'Deputy Head',
+      'department_head': 'Department Head',
+      'secretary': 'Secretary',
+      'accountant': 'Accountant',
+      'librarian': 'Librarian',
+      'nurse': 'Nurse',
+      'counselor': 'Counselor',
+      'security': 'Security',
+      'cleaner': 'Cleaner',
+      'driver': 'Driver',
+      'cook': 'Cook'
+    };
+    return roleMap[role] || role;
+  };
+
+  const getStaffTypeDisplay = (type) => {
+    const typeMap = {
+      'teaching': 'Teaching',
+      'non_teaching': 'Non-Teaching',
+      'administrative': 'Administrative',
+      'support': 'Support'
+    };
+    return typeMap[type] || type;
+  };
+
+  const getDepartmentDisplay = (dept) => {
+    const deptMap = {
+      'academic': 'Academic',
+      'administration': 'Administration',
+      'finance': 'Finance',
+      'it': 'IT',
+      'library': 'Library',
+      'sports': 'Sports',
+      'science': 'Science',
+      'humanities': 'Humanities',
+      'languages': 'Languages',
+      'mathematics': 'Mathematics',
+      'guidance': 'Guidance',
+      'medical': 'Medical',
+      'maintenance': 'Maintenance'
+    };
+    return deptMap[dept] || dept;
+  };
+
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return '-';
+    return phone;
+  };
+
   const columns = [
     {
       title: "Name",
       key: "name",
       render: (_, record) => (
         <Space>
-          <Avatar size="small" icon={<UserOutlined />} />
-          <Text strong>{`${record.first_name} ${record.last_name}`}</Text>
+          <Avatar 
+            size="small" 
+            src={record.profile_image} 
+            icon={!record.profile_image && <UserOutlined />} 
+          />
+          <div>
+            <Text strong>{record.full_name || `${record.first_name} ${record.last_name}`}</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {record.personal_email || 'No email'}
+            </Text>
+          </div>
         </Space>
       ),
+      fixed: 'left',
+      width: 200,
     },
     {
       title: "Staff ID",
       dataIndex: "staff_id",
       key: "staff_id",
+      render: (id) => id || '-',
     },
     {
       title: "Role",
       dataIndex: "staff_role",
       key: "staff_role",
-      render: (role) => <Tag color="blue">{role}</Tag>,
+      render: (role) => role ? <Tag color="blue">{getStaffRoleDisplay(role)}</Tag> : '-',
     },
     {
       title: "Type",
       dataIndex: "staff_type",
       key: "staff_type",
-      render: (type) => <Tag color="geekblue">{type}</Tag>,
+      render: (type) => type ? <Tag color={type === 'teaching' ? 'green' : 'geekblue'}>{getStaffTypeDisplay(type)}</Tag> : '-',
     },
     {
       title: "Department",
       dataIndex: "department",
       key: "department",
-      render: (dept) => (dept ? <Tag>{dept}</Tag> : "-"),
+      render: (dept) => (dept ? <Tag color="orange">{getDepartmentDisplay(dept)}</Tag> : "-"),
+    },
+    {
+      title: "Phone",
+      dataIndex: "personal_phone",
+      key: "personal_phone",
+      render: (phone) => formatPhoneNumber(phone),
     },
     {
       title: "Status",
@@ -160,6 +250,8 @@ export default function StaffManagementPage() {
     {
       title: "Actions",
       key: "actions",
+      fixed: 'right',
+      width: 120,
       render: (_, record) => (
         <Space>
           <Tooltip title="Edit">
@@ -215,11 +307,13 @@ export default function StaffManagementPage() {
           dataSource={staff}
           rowKey="id"
           loading={loading}
+          scroll={{ x: 1000 }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
+            showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} staff`,
+              `${range[0]}-${range[1]} of ${total} ${isTeacherRoute ? 'teachers' : 'staff'}`,
           }}
         />
       </Card>

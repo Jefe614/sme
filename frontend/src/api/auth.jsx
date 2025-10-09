@@ -27,7 +27,7 @@ export const updateClassStatus = (classId, isActive) =>
   api.patch(`/classes/${classId}/`, { is_active: isActive });
 
 export const getStaff = () => api.get("/staff/");
-export const getStaffById = (staffId) => api.get(`/staff/${staffId}/`);
+export const getStaffById = (id) => api.get(`/staff/${id}/`);
 export const createStaff = (data) => api.post("/staff/", data);
 export const updateStaff = (staffId, data) => api.patch(`/staff/${staffId}/`, data);
 export const deleteStaff = (staffId) => api.delete(`/staff/${staffId}/`);

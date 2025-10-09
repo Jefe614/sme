@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Card, Row, Col, Statistic, Button, Badge, Alert, Typography, Space } from 'antd';
+import { Card, Row, Col, Statistic, Button, Badge, Alert, Typography, Space, message, Progress } from 'antd';
 import { 
   UserOutlined,
   TeamOutlined,
@@ -10,13 +10,16 @@ import {
   BellOutlined,
   CalendarOutlined,
   BookOutlined,
-  CarOutlined,
   FileTextOutlined,
   HomeOutlined,
   ApartmentOutlined,
+  PlusOutlined,
+  EyeOutlined,
+  ApartmentOutlined as ClassOutlined,
+  UsergroupAddOutlined
 } from '@ant-design/icons';
-import api from '../api/apiClient'; // Import the custom API client
-import { Line, Doughnut } from 'react-chartjs-2';
+import api from '../api/apiClient';
+import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -26,76 +29,57 @@ import {
   Title as ChartTitle,
   Tooltip, 
   Legend, 
-  ArcElement 
+  ArcElement,
+  BarElement
 } from 'chart.js';
+import { useNavigate } from 'react-router-dom';
 
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, ChartTitle, Tooltip, Legend, ArcElement);
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, ChartTitle, Tooltip, Legend, ArcElement, BarElement);
 
 const { Title: AntTitle, Text } = Typography;
 
 export default function SchoolDashboard() {
   const { user, logout } = useContext(AuthContext);
-  const [stats, setStats] = useState({
-    students: { total: 0, change: 0, boarding: 0, day: 0 },
-    teachers: { total: 0, change: 0 },
-    feesCollected: { total: 0, change: 0 },
-    pendingFees: { total: 0, change: 0 },
-    attendance: { rate: 0, change: 0 }
+  const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      students: { total: 0, change: 0, boarding: 0, day: 0 },
+      teachers: { total: 0, change: 0 },
+      staff: { total: 0, change: 0 },
+      classes: { total: 0, change: 0 },
+      feesCollected: { total: 0, change: 0 },
+      pendingFees: { total: 0, change: 0 },
+      attendance: { rate: 0, change: 0 }
+    },
+    feeTrend: { labels: [], data: [] },
+    feeBreakdown: { labels: [], data: [] },
+    classDistribution: { labels: [], data: [] },
+    recentActivities: [],
+    alerts: []
   });
-  const [feeTrend, setFeeTrend] = useState({ 
-    labels: [],
-    data: []
-  });
-  const [feeBreakdown, setFeeBreakdown] = useState({ 
-    labels: [],
-    data: []
-  });
-  const [studentTypeBreakdown, setStudentTypeBreakdown] = useState({
-    labels: ['Boarding', 'Day Scholars'],
-    data: [0, 0]
-  });
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchDashboard() {
-      try {
-        setError(null);
-        
-        // Use the custom API client from apiClient.js
-        const res = await api.get('/school-dashboard-summary/');
-        
-        // Set all data from API response
-        if (res.data.stats) {
-          setStats(res.data.stats);
-          
-          // Update student type breakdown if data is available
-          if (res.data.stats.students) {
-            setStudentTypeBreakdown({
-              labels: ['Boarding', 'Day Scholars'],
-              data: [
-                res.data.stats.students.boarding || 0,
-                res.data.stats.students.day || 0
-              ]
-            });
-          }
-        }
-        if (res.data.feeTrend) setFeeTrend(res.data.feeTrend);
-        if (res.data.feeBreakdown) setFeeBreakdown(res.data.feeBreakdown);
-        if (res.data.recentActivities) setRecentActivities(res.data.recentActivities);
-        if (res.data.alerts) setAlerts(res.data.alerts);
-        
-      } catch (err) {
-        console.error('Dashboard API error:', err);
-        setError('Failed to load dashboard data. Please try again.');
-      }
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.get('/school-dashboard-summary/');
+      setDashboardData(response.data);
+      
+    } catch (err) {
+      console.error('Dashboard API error:', err);
+      setError('Failed to load dashboard data. Please try again.');
+      message.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
     }
-    
-    if (user?.token) {
-      fetchDashboard();
-    }
-  }, [user?.token]);
+  };
 
   const formatNumber = (num) => {
     if (!num && num !== 0) return '0';
@@ -113,12 +97,50 @@ export default function SchoolDashboard() {
     }).format(amount);
   };
 
-  const chartData = {
-    labels: feeTrend.labels || [],
+  const getAlertType = (type) => {
+    const typeMap = {
+      'warning': 'warning',
+      'error': 'error',
+      'info': 'info',
+      'success': 'success'
+    };
+    return typeMap[type] || 'info';
+  };
+
+  const quickActions = [
+    { 
+      title: 'Add New Student', 
+      icon: <UserOutlined />, 
+      color: '#1677ff',
+      onClick: () => navigate('/school-dashboard/students/add')
+    },
+    { 
+      title: 'Add New Teacher', 
+      icon: <TeamOutlined />, 
+      color: '#52c41a',
+      onClick: () => navigate('/school-dashboard/staff/add', { state: { isTeacher: true } })
+    },
+    { 
+      title: 'Create Class', 
+      icon: <ClassOutlined />, 
+      color: '#722ed1',
+      onClick: () => navigate('/school-dashboard/classes/add')
+    },
+    { 
+      title: 'View Students', 
+      icon: <EyeOutlined />, 
+      color: '#faad14',
+      onClick: () => navigate('/school-dashboard/students')
+    },
+  ];
+
+  // Chart data configurations
+  const feeTrendChart = {
+    labels: dashboardData.feeTrend.labels || [],
     datasets: [
       {
         label: 'Fees Collected',
-        data: feeTrend.data || [],
+        data: dashboardData.feeTrend.data || [],
         backgroundColor: 'rgba(114, 46, 209, 0.1)',
         borderColor: 'rgba(114, 46, 209, 1)',
         borderWidth: 3,
@@ -129,10 +151,10 @@ export default function SchoolDashboard() {
   };
 
   const feeBreakdownChart = {
-    labels: feeBreakdown.labels || [],
+    labels: dashboardData.feeBreakdown.labels || [],
     datasets: [
       {
-        data: feeBreakdown.data || [],
+        data: dashboardData.feeBreakdown.data || [],
         backgroundColor: [
           '#1677ff',
           '#52c41a',
@@ -147,11 +169,28 @@ export default function SchoolDashboard() {
     ],
   };
 
-  const studentTypeChart = {
-    labels: studentTypeBreakdown.labels,
+  const classDistributionChart = {
+    labels: dashboardData.classDistribution.labels || [],
     datasets: [
       {
-        data: studentTypeBreakdown.data,
+        label: 'Students per Class',
+        data: dashboardData.classDistribution.data || [],
+        backgroundColor: 'rgba(22, 119, 255, 0.8)',
+        borderColor: 'rgba(22, 119, 255, 1)',
+        borderWidth: 2,
+        borderRadius: 4,
+      },
+    ],
+  };
+
+  const studentTypeChart = {
+    labels: ['Boarding', 'Day Scholars'],
+    datasets: [
+      {
+        data: [
+          dashboardData.stats.students.boarding || 0,
+          dashboardData.stats.students.day || 0
+        ],
         backgroundColor: ['#1890ff', '#52c41a'],
         borderWidth: 0,
       },
@@ -168,23 +207,13 @@ export default function SchoolDashboard() {
         titleColor: 'white',
         bodyColor: 'white',
         cornerRadius: 8,
-        callbacks: {
-          label: function(context) {
-            return `KSh ${context.parsed.y.toLocaleString()}`;
-          }
-        }
       },
     },
     scales: {
       y: {
         beginAtZero: true,
         grid: { color: 'rgba(0, 0, 0, 0.05)' },
-        ticks: { 
-          color: 'rgba(0, 0, 0, 0.6)',
-          callback: function(value) {
-            return `KSh ${value.toLocaleString()}`;
-          }
-        },
+        ticks: { color: 'rgba(0, 0, 0, 0.6)' },
       },
       x: {
         grid: { display: false },
@@ -201,52 +230,42 @@ export default function SchoolDashboard() {
         position: 'bottom',
         labels: { padding: 20, usePointStyle: true },
       },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const label = context.label || '';
-            const value = context.parsed || 0;
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const percentage = Math.round((value / total) * 100);
-            return `${label}: KSh ${value.toLocaleString()} (${percentage}%)`;
-          }
-        }
-      }
     },
     cutout: '60%',
   };
 
-  const studentTypeOptions = {
+  const barOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { padding: 20, usePointStyle: true },
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const label = context.label || '';
-            const value = context.parsed || 0;
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const percentage = Math.round((value / total) * 100);
-            return `${label}: ${value} students (${percentage}%)`;
-          }
-        }
-      }
+      legend: { display: false },
     },
-    cutout: '60%',
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+        ticks: { color: 'rgba(0, 0, 0, 0.6)' },
+      },
+      x: {
+        grid: { display: false },
+        ticks: { color: 'rgba(0, 0, 0, 0.6)' },
+      },
+    },
   };
 
-  const quickActions = [
-    { title: 'Add New Student', icon: <UserOutlined />, color: '#1677ff' },
-    { title: 'Record Fee Payment', icon: <MoneyCollectOutlined />, color: '#52c41a' },
-    { title: 'Send Fee Reminder', icon: <BellOutlined />, color: '#722ed1' },
-    { title: 'Generate Report', icon: <FileTextOutlined />, color: '#faad14' },
-  ];
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <Text className="mt-4 text-gray-600">Loading dashboard...</Text>
+        </div>
+      </div>
+    );
+  }
 
-  // Render the dashboard regardless of loading state
+  const { stats, recentActivities, alerts } = dashboardData;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -265,11 +284,11 @@ export default function SchoolDashboard() {
           </Badge>
           <Button 
             type="primary" 
-            danger 
-            onClick={logout}
+            icon={<PlusOutlined />}
+            onClick={() => navigate('/school-dashboard/students/add')}
             size="large"
           >
-            Logout
+            Add Student
           </Button>
         </Space>
       </div>
@@ -282,7 +301,7 @@ export default function SchoolDashboard() {
           type="error"
           showIcon
           action={
-            <Button size="small" onClick={() => window.location.reload()}>
+            <Button size="small" onClick={fetchDashboard}>
               Retry
             </Button>
           }
@@ -290,22 +309,16 @@ export default function SchoolDashboard() {
         />
       )}
 
-      {alerts.length > 0 && (
+      {alerts.map((alert, idx) => (
         <Alert
-          message="Attention Required"
-          description={
-            <ul className="list-disc list-inside space-y-1 mt-2">
-              {alerts.map((alert, idx) => (
-                <li key={idx}>{alert.message}</li>
-              ))}
-            </ul>
-          }
-          type="warning"
-          icon={<ExclamationCircleOutlined />}
+          key={idx}
+          message={alert.message}
+          type={getAlertType(alert.type)}
+          showIcon
           closable
-          className="mb-6"
+          className="mb-2"
         />
-      )}
+      ))}
 
       {/* Main Stats Cards */}
       <Row gutter={[16, 16]}>
@@ -315,7 +328,10 @@ export default function SchoolDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="text-center gradient-card-blue">
+            <Card 
+              className="text-center gradient-card-blue hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => navigate('/school-dashboard/students')}
+            >
               <Statistic
                 title={<Text className="text-white/80">Total Students</Text>}
                 value={stats.students.total}
@@ -346,9 +362,12 @@ export default function SchoolDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="text-center gradient-card-green">
+            <Card 
+              className="text-center gradient-card-green hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => navigate('/school-dashboard/teachers')}
+            >
               <Statistic
-                title={<Text className="text-white/80">Active Teachers</Text>}
+                title={<Text className="text-white/80">Teachers</Text>}
                 value={stats.teachers.total}
                 prefix={<TeamOutlined className="text-white/80" />}
                 valueStyle={{ color: 'white', fontSize: '28px' }}
@@ -372,18 +391,20 @@ export default function SchoolDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="text-center gradient-card-purple">
+            <Card 
+              className="text-center gradient-card-purple hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => navigate('/school-dashboard/staff')}
+            >
               <Statistic
-                title={<Text className="text-white/80">Fees Collected</Text>}
-                value={stats.feesCollected.total}
-                prefix="KSh "
-                formatter={(value) => formatNumber(value)}
+                title={<Text className="text-white/80">Total Staff</Text>}
+                value={stats.staff.total}
+                prefix={<UsergroupAddOutlined className="text-white/80" />}
                 valueStyle={{ color: 'white', fontSize: '28px' }}
                 suffix={
-                  stats.feesCollected.change !== 0 && (
+                  stats.staff.change !== 0 && (
                     <div className="text-white/80 text-sm flex items-center justify-center mt-1">
-                      <span className={`ml-1 ${stats.feesCollected.change > 0 ? 'text-green-300' : 'text-red-300'}`}>
-                        {stats.feesCollected.change > 0 ? '+' : ''}{stats.feesCollected.change}%
+                      <span className={`ml-1 ${stats.staff.change > 0 ? 'text-green-300' : 'text-red-300'}`}>
+                        {stats.staff.change > 0 ? '+' : ''}{stats.staff.change}%
                       </span>
                     </div>
                   )
@@ -399,18 +420,20 @@ export default function SchoolDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Card className="text-center gradient-card-orange">
+            <Card 
+              className="text-center gradient-card-orange hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => navigate('/school-dashboard/classes')}
+            >
               <Statistic
-                title={<Text className="text-white/80">Pending Fees</Text>}
-                value={stats.pendingFees.total}
-                prefix="KSh "
-                formatter={(value) => formatNumber(value)}
+                title={<Text className="text-white/80">Classes</Text>}
+                value={stats.classes.total}
+                prefix={<ClassOutlined className="text-white/80" />}
                 valueStyle={{ color: 'white', fontSize: '28px' }}
                 suffix={
-                  stats.pendingFees.change !== 0 && (
+                  stats.classes.change !== 0 && (
                     <div className="text-white/80 text-sm flex items-center justify-center mt-1">
-                      <span className={`ml-1 ${stats.pendingFees.change > 0 ? 'text-green-300' : 'text-red-300'}`}>
-                        {stats.pendingFees.change > 0 ? '+' : ''}{stats.pendingFees.change}%
+                      <span className={`ml-1 ${stats.classes.change > 0 ? 'text-green-300' : 'text-red-300'}`}>
+                        {stats.classes.change > 0 ? '+' : ''}{stats.classes.change}%
                       </span>
                     </div>
                   )
@@ -424,31 +447,49 @@ export default function SchoolDashboard() {
       {/* Charts and Quick Actions */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={16}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <Card 
-              title="Fee Collection Trend"
-              extra={
-                <Space>
-                  <Button size="small" type="primary">6M</Button>
-                  <Button size="small">1Y</Button>
-                </Space>
-              }
-            >
-              <div style={{ height: '300px' }}>
-                {feeTrend.data && feeTrend.data.length > 0 ? (
-                  <Line data={chartData} options={chartOptions} />
-                ) : (
-                  <div className="flex justify-center items-center h-full text-gray-400">
-                    No fee data available
-                  </div>
-                )}
-              </div>
-            </Card>
-          </motion.div>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
+              <Card title="Student Distribution" size="small">
+                <div style={{ height: '250px' }}>
+                  {stats.students.total > 0 ? (
+                    <Doughnut data={studentTypeChart} options={doughnutOptions} />
+                  ) : (
+                    <div className="flex flex-col justify-center items-center h-full text-gray-400">
+                      <UserOutlined className="text-4xl mb-4" />
+                      <Text>No students yet</Text>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card title="Class Distribution" size="small">
+                <div style={{ height: '250px' }}>
+                  {dashboardData.classDistribution.data.length > 0 ? (
+                    <Bar data={classDistributionChart} options={barOptions} />
+                  ) : (
+                    <div className="flex flex-col justify-center items-center h-full text-gray-400">
+                      <ClassOutlined className="text-4xl mb-4" />
+                      <Text>No classes yet</Text>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24}>
+              <Card title="Fee Collection Trend" size="small">
+                <div style={{ height: '200px' }}>
+                  {dashboardData.feeTrend.data.length > 0 ? (
+                    <Line data={feeTrendChart} options={chartOptions} />
+                  ) : (
+                    <div className="flex justify-center items-center h-full text-gray-400">
+                      No fee data available
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </Col>
+          </Row>
         </Col>
 
         <Col xs={24} lg={8}>
@@ -465,7 +506,8 @@ export default function SchoolDashboard() {
                     block
                     size="large"
                     icon={action.icon}
-                    className="text-left flex items-center justify-start"
+                    onClick={action.onClick}
+                    className="text-left flex items-center justify-start hover:scale-105 transition-transform"
                     style={{ borderColor: action.color, color: action.color }}
                   >
                     {action.title}
@@ -473,108 +515,90 @@ export default function SchoolDashboard() {
                 ))}
               </div>
             </Card>
-          </motion.div>
-        </Col>
-      </Row>
 
-      {/* Additional Stats and Activities */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={8}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <Card title="Student Type Breakdown">
-              <div style={{ height: '250px' }}>
-                <Doughnut data={studentTypeChart} options={studentTypeOptions} />
-              </div>
-            </Card>
-          </motion.div>
-        </Col>
-
-        <Col xs={24} lg={8}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            <Card title="Fee Breakdown">
-              <div style={{ height: '250px' }}>
-                {feeBreakdown.data && feeBreakdown.data.length > 0 ? (
-                  <Doughnut data={feeBreakdownChart} options={doughnutOptions} />
-                ) : (
-                  <div className="flex justify-center items-center h-full text-gray-400">
-                    No fee breakdown data
-                  </div>
-                )}
-              </div>
-            </Card>
-          </motion.div>
-        </Col>
-
-        <Col xs={24} lg={8}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-          >
-            <Card 
-              title="Recent Activities"
-              extra={<Button type="link" size="small">View All</Button>}
-            >
+            <Card title="System Overview" className="mt-4">
               <div className="space-y-4">
-                {recentActivities.length > 0 ? (
-                  recentActivities.map((activity, idx) => (
-                    <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-2" />
-                      <div className="flex-1">
-                        <Text strong className="block">{activity.description}</Text>
-                        <Text type="secondary" className="text-sm">{activity.time}</Text>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-400 py-8">
-                    No recent activities
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Text>Student Capacity</Text>
+                    <Text strong>{stats.students.total}/500</Text>
                   </div>
-                )}
+                  <Progress 
+                    percent={Math.min((stats.students.total / 500) * 100, 100)} 
+                    size="small" 
+                    strokeColor={{
+                      '0%': '#108ee9',
+                      '100%': '#87d068',
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Text>Teacher Ratio</Text>
+                    <Text strong>
+                      {stats.students.total > 0 && stats.teachers.total > 0 
+                        ? `1:${Math.round(stats.students.total / stats.teachers.total)}`
+                        : 'N/A'
+                      }
+                    </Text>
+                  </div>
+                  <Progress 
+                    percent={Math.min((stats.teachers.total / 20) * 100, 100)} 
+                    size="small" 
+                    strokeColor="#52c41a"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <Text strong className="block text-blue-600">{stats.attendance.rate}%</Text>
+                    <Text type="secondary" className="text-xs">Attendance</Text>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <Text strong className="block text-green-600">
+                      {stats.feesCollected.total > 0 ? 'Good' : 'N/A'}
+                    </Text>
+                    <Text type="secondary" className="text-xs">Fee Status</Text>
+                  </div>
+                </div>
               </div>
             </Card>
           </motion.div>
         </Col>
       </Row>
 
-      {/* Quick Stats */}
+      {/* Recent Activities */}
       <Row gutter={[16, 16]}>
-        <Col xs={12} sm={6}>
-          <Card className="text-center">
-            <CalendarOutlined className="text-2xl text-blue-600 mb-2" />
-            <Text type="secondary" className="block text-sm">Academic Year</Text>
-            <Text strong>2024/2025</Text>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card className="text-center">
-            <BookOutlined className="text-2xl text-green-600 mb-2" />
-            <Text type="secondary" className="block text-sm">Current Term</Text>
-            <Text strong>Term 3</Text>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card className="text-center">
-            <CarOutlined className="text-2xl text-orange-600 mb-2" />
-            <Text type="secondary" className="block text-sm">Transport Routes</Text>
-            <Text strong>12 Active</Text>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card className="text-center">
-            <div className="w-6 h-6 bg-purple-600 rounded-full mx-auto mb-2 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">%</span>
+        <Col xs={24}>
+          <Card 
+            title="Recent Activities"
+            extra={
+              <Button type="link" size="small">
+                View All
+              </Button>
+            }
+          >
+            <div className="space-y-4">
+              {recentActivities.length > 0 ? (
+                recentActivities.map((activity, idx) => (
+                  <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className={`w-2 h-2 rounded-full mt-2 ${
+                      activity.type === 'student' ? 'bg-blue-600' : 'bg-green-600'
+                    }`} />
+                    <div className="flex-1">
+                      <Text strong className="block">{activity.description}</Text>
+                      <Text type="secondary" className="text-sm">{activity.time}</Text>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-400 py-8">
+                  <FileTextOutlined className="text-3xl mb-2" />
+                  <div>No recent activities</div>
+                </div>
+              )}
             </div>
-            <Text type="secondary" className="block text-sm">Attendance Rate</Text>
-            <Text strong className="text-green-600">{stats.attendance?.rate || 0}%</Text>
           </Card>
         </Col>
       </Row>

@@ -152,9 +152,11 @@ export default function CreateStaffPage() {
     setLoading(true);
     try {
       const formData = new FormData();
+      
+      // Append all fields to FormData
       Object.keys(values).forEach((key) => {
         if (key === "profile_image" && values[key]?.file) {
-          formData.append(key, values[key].file);
+          formData.append("profileImage", values[key].file);
         } else if (
           key === "date_of_birth" ||
           key === "date_joined" ||
@@ -163,15 +165,30 @@ export default function CreateStaffPage() {
           key === "probation_end_date"
         ) {
           formData.append(
-            key,
+            key.replace(/_/g, ''), // Convert to camelCase: date_of_birth -> dateOfBirth
             values[key] ? moment(values[key]).format("YYYY-MM-DD") : ""
           );
         } else if (key === "subjects" || key === "classes_taught") {
-          formData.append(key, JSON.stringify(values[key] || []));
+          const arrayValue = values[key] || [];
+          arrayValue.forEach((item) => {
+            formData.append(key, item);
+          });
+        } else if (key === "class_teacher_of") {
+          formData.append("classTeacherOf", values[key] || "");
+        } else if (key === "is_class_teacher") {
+          formData.append("isClassTeacher", values[key] ? "true" : "false");
+        } else if (key === "is_active") {
+          formData.append("isActive", values[key] ? "true" : "false");
         } else {
-          formData.append(key, values[key] || "");
+          // Convert snake_case to camelCase for backend
+          const camelCaseKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+          formData.append(camelCaseKey, values[key] || "");
         }
       });
+
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
 
       const response = await createStaff(formData);
       console.log("API Response:", response);
