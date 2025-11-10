@@ -1,47 +1,47 @@
 // src/utils/getApiBase.js
 export function getApiBase({ company, useTenant = true } = {}) {
-  const hostname = window.location.hostname; // e.g. sme.localhost or api.myapp.com
+  const hostname = window.location.hostname; // e.g., sme.localhost or tenant.myapp.com
   const protocol = window.location.protocol; // http:// or https://
   const port = import.meta.env.VITE_BACKEND_PORT || "";
-  const ENV_API = import.meta.env.VITE_BASE_API; // fallback (e.g., https://api.myapp.com)
+  const ENV_API = import.meta.env.VITE_BASE_API; // fallback API base
 
-  // 1. Explicit company schema (preferred)
+  let schema = null;
+
+  // 1. Explicit company schema (from object)
   if (company?.schema && useTenant) {
-    if (hostname === "localhost") {
-      return `${protocol}//${company.schema}.localhost${port ? `:${port}` : ""}/api`;
-    }
-    return `${protocol}//${company.schema}.${hostname}/api`;
+    schema = company.schema;
   }
 
-  // 2. Try to extract schema from subdomain (works for tenant.localhost or tenant.myapp.com)
-  if (useTenant) {
+  // 2. Extract from subdomain
+  if (!schema && useTenant) {
     const parts = hostname.split(".");
-    // localhost handling (schema.localhost → [schema, localhost])
     if (hostname.includes("localhost") && parts.length > 1) {
-      const schema = parts[0];
-      if (schema && schema !== "www") {
-        return `${protocol}//${schema}.localhost${port ? `:${port}` : ""}/api`;
-      }
-    }
-
-    // production domain handling (schema.myapp.com → [schema, myapp, com])
-    if (parts.length > 2) {
-      const schema = parts[0];
-      if (schema && schema !== "www") {
-        return `${protocol}//${schema}.${parts.slice(1).join(".")}/api`;
-      }
+      // e.g., tenant.localhost
+      const sub = parts[0];
+      if (sub && sub !== "www") schema = sub;
+    } else if (parts.length > 2) {
+      // e.g., tenant.myapp.com
+      const sub = parts[0];
+      if (sub && sub !== "www") schema = sub;
     }
   }
 
-  // 3. Stored tenant schema in localStorage
-  const tenantSchema = useTenant ? localStorage.getItem("tenantSchema") : null;
-  if (tenantSchema) {
-    if (hostname === "localhost") {
-      return `${protocol}//${tenantSchema}.localhost${port ? `:${port}` : ""}/api`;
-    }
-    return `${protocol}//${tenantSchema}.${hostname}/api`;
+  // 3. Fallback to localStorage
+  if (!schema && useTenant) {
+    const storedSchema = localStorage.getItem("tenantSchema");
+    if (storedSchema) schema = storedSchema;
   }
 
-  // 4. Public API fallback
+  // 4. Build API URL
+  if (schema && useTenant) {
+    if (hostname.includes("localhost")) {
+      return `${protocol}//${schema}.localhost${port ? `:${port}` : ""}/api`;
+    } else {
+      const domain = hostname.split(".").slice(1).join(".");
+      return `${protocol}//${schema}.${domain}/api`;
+    }
+  }
+
+  // 5. Fallback public API
   return `${ENV_API}/api`;
 }
