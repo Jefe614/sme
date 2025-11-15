@@ -43,16 +43,6 @@ class StudentSerializer(serializers.ModelSerializer):
             return today.year - obj.date_of_birth.year - ((today.month, today.day) < (obj.date_of_birth.month, obj.date_of_birth.day))
         return None
     
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        # Handle date formatting for frontend
-        if instance.date_of_birth:
-            data['date_of_birth'] = instance.date_of_birth.isoformat()
-        if instance.admission_date:
-            data['admission_date'] = instance.admission_date.isoformat()
-        if instance.boarding_since:
-            data['boarding_since'] = instance.boarding_since.isoformat()
-        return data
 
 class FeePaymentSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.get_full_name', read_only=True)

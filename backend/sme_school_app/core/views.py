@@ -9,6 +9,8 @@ from rest_framework.authtoken.models import Token
 from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count, Sum, Q
 from django_tenants.utils import tenant_context
+from rest_framework.permissions import AllowAny
+
 
 from tenants.models import Company, Domain
 
@@ -78,6 +80,7 @@ class SignupAPIView(APIView):
 
 # -------------------- Login --------------------
 class LoginAPIView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
@@ -137,68 +140,81 @@ class StudentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Get the current tenant (school) from request
-        company_id = request.query_params.get("company")
-        if not company_id:
-            return Response({"error": "Company ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            company = Company.objects.get(id=company_id, owner=request.user, company_type="SCHOOL")
-        except Company.DoesNotExist:
-            return Response({"error": "School company not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Use tenant context to ensure data isolation
-        with tenant_context(company):
-            q = request.query_params.get("q")
-            students = Student.objects.all()
-            
-            if q:
-                students = students.filter(
-                    Q(first_name__icontains=q) |
-                    Q(last_name__icontains=q) |
-                    Q(admission_number__icontains=q) |
-                    Q(parent_name__icontains=q)
-                )
-            
-            # Filter by student type if provided
-            student_type = request.query_params.get('student_type')
-            if student_type:
-                students = students.filter(student_type=student_type)
-            
-            # Filter by class if provided
-            student_class = request.query_params.get('class')
-            if student_class:
-                students = students.filter(student_class=student_class)
-            
-            paginator = Paginator(students, request.query_params.get("rows", 25))
-            try:
-                page = paginator.page(request.query_params.get("page", 1))
-            except EmptyPage:
-                page = paginator.page(1)
-            
-            return Response({
-                "message": "Students fetched successfully",
-                "students": StudentSerializer(page, many=True).data,
-                "pagination": {
-                    "currentPage": int(request.query_params.get("page", 1)),
-                    "total": paginator.count,
-                    "pageSize": int(request.query_params.get("rows", 25)),
-                },
-            })
-
-    def post(self, request):
-        formData = request.data
-        
         company = request.company
         
-        if not company:
-            return Response({"error": "No tenant found in request"}, status=status.HTTP_400_BAD_REQUEST)
+        # Get all students for the company
+        students = Student.objects.filter(company=company)
         
-        # Validate that the tenant is a school
-        if company.company_type != "SCHOOL":
+        # Search filter
+        q = request.query_params.get("q")
+        if q:
+            students = students.filter(
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q) |
+                Q(admission_number__icontains=q) |
+                Q(parent_name__icontains=q)
+            )
+        
+        # Filter by student type if provided
+        student_type = request.query_params.get('student_type')
+        if student_type:
+            students = students.filter(student_type=student_type)
+        
+        # Filter by class if provided
+        student_class = request.query_params.get('class')
+        if student_class:
+            students = students.filter(student_class_id=student_class)
+        
+        # Filter by active status if provided
+        is_active = request.query_params.get('is_active')
+        if is_active is not None:
+            if is_active.lower() == 'true':
+                students = students.filter(is_active=True)
+            elif is_active.lower() == 'false':
+                students = students.filter(is_active=False)
+        
+        # Order by latest first
+        students = students.order_by('-date_joined')
+        
+        # Pagination
+        page_size = request.query_params.get("pageSize", 10)
+        page_number = request.query_params.get("current", 1)
+        
+        try:
+            page_size = int(page_size)
+            page_number = int(page_number)
+        except (TypeError, ValueError):
+            page_size = 10
+            page_number = 1
+        
+        paginator = Paginator(students, page_size)
+        
+        try:
+            page = paginator.page(page_number)
+        except EmptyPage:
+            page = paginator.page(1)
+            page_number = 1
+        
+        return Response({
+            "message": "Students fetched successfully",
+            "data": StudentSerializer(page, many=True).data,
+            "pagination": {
+                "current": page_number,
+                "pageSize": page_size,
+                "total": paginator.count,
+                "totalPages": paginator.num_pages,
+            },
+        })
+    def post(self, request):
+        company = request.company
+
+        if not company or company.company_type != "SCHOOL":
             return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Parse date fields
+
+        # === Use request.POST for form fields ===
+        formData = request.POST
+        files = request.FILES
+
         def parse_date(date_str):
             if date_str:
                 try:
@@ -206,101 +222,60 @@ class StudentAPIView(APIView):
                 except (ValueError, TypeError):
                     return None
             return None
-        
-        date_of_birth = parse_date(formData.get("dateOfBirth"))
-        admission_date = parse_date(formData.get("admissionDate"))
-        boarding_since = parse_date(formData.get("boardingSince"))
-        
-        # Handle visitation days array
-        visitation_days = formData.get("visitationDays")
-        if visitation_days and isinstance(visitation_days, list):
-            visitation_days = ",".join(visitation_days)
-        
-        # Handle medical conditions
-        medical_conditions = formData.get("medicalConditions")
-        has_medical_conditions = formData.get("hasMedicalConditions")
-        if has_medical_conditions is False and not medical_conditions:
-            medical_conditions = "None"
-        
-        # Validate student_class (ForeignKey)
-        student_class_id = formData.get("class")
+
+        date_of_birth = parse_date(formData.get("date_of_birth"))
+        admission_date = parse_date(formData.get("admission_date"))
+
+        # Validate student_class
+        student_class_id = formData.get("student_class")
         student_class = None
         if student_class_id:
             try:
                 student_class = StudentClass.objects.get(id=student_class_id, company=company)
             except StudentClass.DoesNotExist:
                 return Response({"error": "Invalid class ID"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         student_data = {
             "company": company,
-            "first_name": formData.get("firstName", "").strip(),
-            "last_name": formData.get("lastName", "").strip(),
-            "admission_number": formData.get("admissionNumber", "").strip(),
+            "first_name": formData.get("first_name", "").strip(),
+            "last_name": formData.get("last_name", "").strip(),
+            "admission_number": formData.get("admission_number", "").strip(),
             "gender": formData.get("gender", ""),
             "date_of_birth": date_of_birth,
-            "nationality": formData.get("nationality", "").strip(),
-            "student_type": formData.get("studentType", "day"),
+            "student_type": formData.get("student_type", "day"),
             "student_class": student_class,
-            "section": formData.get("section", "").strip(),
             "admission_date": admission_date,
-            "roll_number": formData.get("rollNumber", "").strip(),
-            "class_teacher": formData.get("classTeacher", "").strip(),
-            "previous_school": formData.get("previousSchool", "").strip(),
-            "parent_name": formData.get("parentName", "").strip(),
+            "parent_name": formData.get("parent_name", "").strip(),
             "relationship": formData.get("relationship", ""),
-            "parent_phone": formData.get("parentPhone", "").strip(),
-            "parent_email": formData.get("parentEmail", "").strip(),
-            "parent_occupation": formData.get("parentOccupation", "").strip(),
-            "emergency_contact": formData.get("emergencyContact", "").strip(),
-            "address": formData.get("parentAddress", "").strip(),
-            "city": formData.get("city", "").strip(),
-            "postal_code": formData.get("postalCode", "").strip(),
-            "bus_route": formData.get("busRoute", "").strip(),
-            "pickup_person": formData.get("pickupPerson", "").strip(),
-            "pickup_notes": formData.get("pickupNotes", "").strip(),
+            "parent_phone": formData.get("parent_phone", "").strip(),
+            "nationality": formData.get("nationality", "").strip(),
+            "roll_number": formData.get("roll_number", "").strip(),
+            "parent_email": formData.get("parent_email", "").strip(),
+            "address": formData.get("address", "").strip(),
             "hostel": formData.get("hostel", "").strip(),
-            "dormitory": formData.get("dormitory", "").strip(),
-            "bed_number": formData.get("bedNumber", "").strip(),
-            "boarding_since": boarding_since,
-            "boarding_notes": formData.get("boardingNotes", "").strip(),
-            "visitation_days": visitation_days,
-            "leave_arrangements": formData.get("leaveArrangements", ""),
-            "blood_group": formData.get("bloodGroup", ""),
+            "blood_group": formData.get("blood_group", "").strip(),
             "allergies": formData.get("allergies", "").strip(),
-            "medical_conditions": medical_conditions,
-            "doctor_info": formData.get("doctorInfo", "").strip(),
-            "special_notes": formData.get("specialNotes", "").strip(),
-            "is_active": formData.get("isActive", True)
+            "medical_conditions": formData.get("medical_conditions", "").strip(),
         }
-        
-        # Validate required fields
+
+        # === Required Fields Validation ===
         required_fields = [
             'first_name', 'last_name', 'gender', 'date_of_birth',
             'student_class', 'admission_date', 'parent_name',
             'relationship', 'parent_phone'
         ]
-        
-        missing_fields = []
-        for field in required_fields:
-            if not student_data.get(field):
-                missing_fields.append(field)
-        
+
+        missing_fields = [field for field in required_fields if not student_data.get(field)]
         if missing_fields:
             return Response({
                 "error": f"Missing required fields: {', '.join(missing_fields)}"
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Validate student type specific required fields
-        if student_data['student_type'] == 'boarding' and not student_data['hostel']:
-            return Response({
-                "error": "Hostel is required for boarding students"
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Handle profile image
-        profile_image = request.FILES.get('profileImage')
+
+        # === Handle Profile Image ===
+        profile_image = files.get('profile_image')
         if profile_image:
             student_data['profile_image'] = profile_image
-        
+
         try:
             student = Student(**student_data)
             student.save()
@@ -394,7 +369,6 @@ class StudentClassView(APIView):
         """
         try:
             company = request.company
-            print("company", company)
             if not request.company:
                 return Response({"error": "No tenant found in request"}, status=status.HTTP_400_BAD_REQUEST)
             if request.company.company_type != "SCHOOL":
@@ -412,6 +386,7 @@ class StudentClassView(APIView):
             class_schedule = data.get("class_schedule", "")
             is_active = data.get("is_active", True)
             name = data.get("name", "").strip()
+            
 
             # Validate required fields
             required_fields = ['grade_level', 'section', 'academic_year', 'max_students']
@@ -930,12 +905,21 @@ class SchoolDashboardSummaryAPIView(APIView):
                 company=company, 
                 payment_status='completed'
             ).aggregate(
-                total_collected=Sum('amount_paid'),
-                total_pending=Sum('due_amount') - Sum('amount_paid')
+                total_collected=Sum('amount_paid')
+            )
+            
+            # Calculate pending fees (total due - total paid)
+            pending_fee_stats = FeePayment.objects.filter(
+                company=company
+            ).aggregate(
+                total_due=Sum('due_amount'),
+                total_paid=Sum('amount_paid')
             )
             
             fees_collected = fee_stats['total_collected'] or 0
-            pending_fees = fee_stats['total_pending'] or 0
+            total_due = pending_fee_stats['total_due'] or 0
+            total_paid = pending_fee_stats['total_paid'] or 0
+            pending_fees = max(total_due - total_paid, 0)
             
             # Calculate student change (last 30 days vs previous 30 days)
             thirty_days_ago = timezone.now() - timedelta(days=30)
@@ -953,6 +937,41 @@ class SchoolDashboardSummaryAPIView(APIView):
             ).count()
             
             student_change = self._calculate_percentage_change(previous_students, recent_students)
+            
+            # Teacher change calculation
+            recent_teachers = Staff.objects.filter(
+                company=company,
+                staff_type='teaching',
+                date_joined__gte=thirty_days_ago
+            ).count()
+            
+            previous_teachers = Staff.objects.filter(
+                company=company,
+                staff_type='teaching',
+                date_joined__gte=sixty_days_ago,
+                date_joined__lt=thirty_days_ago
+            ).count()
+            
+            teacher_change = self._calculate_percentage_change(previous_teachers, recent_teachers)
+            
+            # Fee collection change (this month vs last month)
+            this_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            last_month = (this_month - timedelta(days=1)).replace(day=1)
+            
+            this_month_fees = FeePayment.objects.filter(
+                company=company,
+                payment_status='completed',
+                payment_date__gte=this_month
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+            
+            last_month_fees = FeePayment.objects.filter(
+                company=company,
+                payment_status='completed',
+                payment_date__gte=last_month,
+                payment_date__lt=this_month
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+            
+            fee_change = self._calculate_percentage_change(last_month_fees, this_month_fees)
             
             # Recent activities (last 5 students/teachers)
             recent_students_list = Student.objects.filter(company=company).order_by('-date_joined')[:5]
@@ -982,31 +1001,38 @@ class SchoolDashboardSummaryAPIView(APIView):
             
             for payment in recent_payments:
                 recent_activities.append({
-                    'description': f'Fee payment received: {payment.student.first_name} {payment.student.last_name} - KSh {payment.amount_paid}',
+                    'description': f'Fee payment received: {payment.student.first_name} {payment.student.last_name} - KSh {payment.amount_paid:,.0f}',
                     'time': self._time_ago(payment.payment_date),
                     'type': 'payment',
                     'icon': 'payment'
                 })
             
             # Sort activities by time (newest first) and take latest 6
-            recent_activities.sort(key=lambda x: x['time'], reverse=True)
+            recent_activities.sort(key=lambda x: x['time'], reverse=False)
             recent_activities = recent_activities[:6]
             
-            # Alerts
-            alerts = []
-            if total_students == 0:
-                alerts.append({'message': 'No students registered yet. Add your first student.', 'type': 'warning'})
-            if total_teachers == 0:
-                alerts.append({'message': 'No teachers registered yet. Add your teaching staff.', 'type': 'warning'})
-            if total_classes == 0:
-                alerts.append({'message': 'No classes created yet. Set up your class structure.', 'type': 'info'})
-            if pending_fees > 0:
-                alerts.append({'message': f'KSh {pending_fees:,.0f} in pending fees. Follow up with students.', 'type': 'warning'})
+            # Calculate pending fees change
+            previous_month_pending = FeePayment.objects.filter(
+                company=company,
+                created_at__gte=last_month,
+                created_at__lt=this_month
+            ).aggregate(
+                total_due=Sum('due_amount'),
+                total_paid=Sum('amount_paid')
+            )
+            
+            prev_due = previous_month_pending['total_due'] or 0
+            prev_paid = previous_month_pending['total_paid'] or 0
+            previous_pending = max(prev_due - prev_paid, 0)
+            
+            pending_change = self._calculate_percentage_change(previous_pending, pending_fees)
+            # Negative change is good for pending fees, so invert it
+            pending_change = -pending_change if pending_fees < previous_pending else pending_change
             
             # Class distribution
             class_distribution = StudentClass.objects.filter(company=company).annotate(
                 student_count=Count('students')
-            ).values('name', 'student_count')[:6]
+            ).values('name', 'student_count').order_by('-student_count')[:6]
             
             class_labels = [cls['name'] for cls in class_distribution]
             class_data = [cls['student_count'] for cls in class_distribution]
@@ -1044,26 +1070,23 @@ class SchoolDashboardSummaryAPIView(APIView):
                 fee_trend_labels.append(month_names[month_idx])
                 fee_trend_data.append(float(fee_data['total'] or 0))
             
-            # If no fee data, use mock data
-            if not fee_trend_data:
-                fee_trend = {
-                    'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    'data': [45000, 52000, 48000, 61000, 59000, 67000]
-                }
-            else:
-                fee_trend = {
-                    'labels': fee_trend_labels,
-                    'data': fee_trend_data
-                }
+            # Fee trend
+            fee_trend = {
+                'labels': fee_trend_labels,
+                'data': fee_trend_data
+            }
             
-            # Fee breakdown by type (mock data - you can enhance this with actual fee structure data)
+            # Fee breakdown by type (you can enhance this with actual fee structure data)
             fee_breakdown = {
                 'labels': ['Tuition', 'Boarding', 'Transport', 'Activities', 'Other'],
                 'data': [120000, 80000, 45000, 25000, 15000]
             }
             
-            # Student attendance rate (mock data - you can implement actual attendance tracking)
-            attendance_rate = 94  # This would come from your attendance system
+            # Gender distribution for frontend
+            gender_distribution = {
+                'labels': ['Male', 'Female', 'Other'],
+                'data': [male_students, female_students, other_students]
+            }
             
             return Response({
                 'stats': {
@@ -1078,11 +1101,14 @@ class SchoolDashboardSummaryAPIView(APIView):
                     },
                     'teachers': {
                         'total': total_teachers,
-                        'change': 5  # You can implement similar calculation for teachers
+                        'change': teacher_change
                     },
                     'staff': {
                         'total': total_staff,
-                        'change': 2,
+                        'change': self._calculate_percentage_change(
+                            total_staff - recent_students,
+                            total_staff
+                        ),
                         'by_type': {
                             'labels': staff_type_labels,
                             'data': staff_type_data
@@ -1094,15 +1120,11 @@ class SchoolDashboardSummaryAPIView(APIView):
                     },
                     'feesCollected': {
                         'total': fees_collected,
-                        'change': 8
+                        'change': fee_change
                     },
                     'pendingFees': {
                         'total': pending_fees,
-                        'change': -3
-                    },
-                    'attendance': {
-                        'rate': attendance_rate,
-                        'change': 2
+                        'change': pending_change
                     }
                 },
                 'feeTrend': fee_trend,
@@ -1111,12 +1133,8 @@ class SchoolDashboardSummaryAPIView(APIView):
                     'labels': class_labels,
                     'data': class_data
                 },
-                'genderDistribution': {
-                    'labels': ['Male', 'Female', 'Other'],
-                    'data': [male_students, female_students, other_students]
-                },
+                'genderDistribution': gender_distribution,
                 'recentActivities': recent_activities,
-                'alerts': alerts
             })
             
         except Exception as e:
@@ -1136,11 +1154,15 @@ class SchoolDashboardSummaryAPIView(APIView):
             diff = now - timestamp
             
         if diff.days > 0:
-            return f'{diff.days} day(s) ago'
+            if diff.days == 1:
+                return '1 day ago'
+            return f'{diff.days} days ago'
         elif hasattr(diff, 'seconds') and diff.seconds >= 3600:
-            return f'{diff.seconds // 3600} hour(s) ago'
+            hours = diff.seconds // 3600
+            return f'{hours} hour{"s" if hours > 1 else ""} ago'
         elif hasattr(diff, 'seconds') and diff.seconds >= 60:
-            return f'{diff.seconds // 60} minute(s) ago'
+            minutes = diff.seconds // 60
+            return f'{minutes} minute{"s" if minutes > 1 else ""} ago'
         else:
             return 'Just now'
         

@@ -61,9 +61,7 @@ export default function CreateClassPage() {
  const handleSubmit = async (values) => {
   setLoading(true);
   try {
-    console.log("Form Values:", values);
     const response = await createClass(values);
-    console.log("API Response:", response);
     await Swal.fire({
       title: "Success!",
       text: "Class created successfully!",

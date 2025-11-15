@@ -15,32 +15,56 @@ export const AuthProvider = ({ children }) => {
   // Optionally: fetch user profile if token exists
   useEffect(() => {
     if (token && !user) {
+      // fetch user profile here if needed
       // e.g., fetch("/me") → setUser()
     }
   }, [token, user]);
 
- const handleLogin = async (credentials) => {
-  const tenantSchema = localStorage.getItem("tenantSchema") || null;
+  // Detect tenant subdomain automatically if no schema is stored
+  useEffect(() => {
+    if (!tenantSchema) {
+      const hostname = window.location.hostname;
+      const parts = hostname.split(".");
+      let subdomain = null;
 
-  const res = await login({
-    ...credentials,
-    schema: tenantSchema,
-  });
+      if (hostname.includes("localhost") && parts.length > 1) {
+        // e.g., tenant.localhost
+        subdomain = parts[0];
+      } else if (parts.length > 2) {
+        // e.g., tenant.myapp.com
+        subdomain = parts[0];
+      }
 
-  const { user, token, company } = res.data;
+      if (subdomain && subdomain !== "www") {
+        setTenantSchema(subdomain);
+        localStorage.setItem("tenantSchema", subdomain);
+      }
+    }
+  }, [tenantSchema]);
 
-  setUser(user);
-  setToken(token);
-  setTenantSchema(company.schema);
+  // Handle login
+  const handleLogin = async (credentials) => {
+    const schema = localStorage.getItem("tenantSchema") || null;
 
-  localStorage.setItem("authUser", JSON.stringify(user));
-  localStorage.setItem("authToken", token);
-  localStorage.setItem("tenantSchema", company.schema);
+    const res = await login({
+      ...credentials,
+      schema,
+    });
 
-  return res;
-};
+    const { user, token, company } = res.data;
 
+    setUser(user);
+    setToken(token);
+    setTenantSchema(company.schema);
 
+    localStorage.setItem("authUser", JSON.stringify(user));
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("tenantSchema", company.schema);
+
+    return res;
+  };
+
+  // Handle logout
   const handleLogout = () => {
     setUser(null);
     setToken(null);

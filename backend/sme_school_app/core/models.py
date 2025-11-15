@@ -27,93 +27,48 @@ class Student(models.Model):
     GENDER_CHOICES = (
         ('male', 'Male'),
         ('female', 'Female'),
-        ('other', 'Other'),
     )
     
     RELATIONSHIP_CHOICES = (
         ('father', 'Father'),
         ('mother', 'Mother'),
         ('guardian', 'Guardian'),
-        ('other', 'Other'),
-    )
-    
-    BLOOD_GROUP_CHOICES = (
-        ('A+', 'A+'),
-        ('A-', 'A-'),
-        ('B+', 'B+'),
-        ('B-', 'B-'),
-        ('AB+', 'AB+'),
-        ('AB-', 'AB-'),
-        ('O+', 'O+'),
-        ('O-', 'O-'),
     )
     
     company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
     
-    # Basic Information
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     admission_number = models.CharField(max_length=50, unique=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='male')
-    date_of_birth = models.DateField(blank=True, null=True, default=None)
-    nationality = models.CharField(max_length=100, blank=True, null=True)
-    profile_image = models.ImageField(upload_to='student_profiles/', blank=True, null=True)
-    
-    # Student Type
+    date_of_birth = models.DateField()
     student_type = models.CharField(max_length=10, choices=STUDENT_TYPES, default='day')
     
-    # Academic Details
     student_class = models.ForeignKey(
         'StudentClass', 
         on_delete=models.SET_NULL, 
-        blank=True, 
         null=True,
         related_name='students'
-    )    
-    section = models.CharField(max_length=10, blank=True, null=True)
-    admission_date = models.DateField()
-    roll_number = models.CharField(max_length=20, blank=True, null=True)
-    class_teacher = models.CharField(max_length=100, blank=True, null=True)
-    previous_school = models.CharField(max_length=255, blank=True, null=True)
+    )
+    admission_date = models.DateField(auto_now_add=True)
     
-    # Parent/Guardian Information
-    parent_name = models.CharField(max_length=100, blank=True, null=True)
-    relationship = models.CharField(max_length=10, choices=RELATIONSHIP_CHOICES, blank=True, null=True)
-    parent_phone = models.CharField(max_length=20, blank=True, null=True)
-    parent_email = models.EmailField(blank=True, null=True)
-    parent_occupation = models.CharField(max_length=100, blank=True, null=True)
-    emergency_contact = models.CharField(max_length=20, blank=True, null=True)
+    parent_name = models.CharField(max_length=100 , blank=True, default='')
+    relationship = models.CharField(max_length=10, choices=RELATIONSHIP_CHOICES, blank=True, default='')
+    parent_phone = models.CharField(max_length=20, blank=True, default='')
     
-    # Address Information
-    address = models.TextField(blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    postal_code = models.CharField(max_length=20, blank=True, null=True)
+    profile_image = models.ImageField(upload_to='student_profiles/', blank=True, null=True)
+    nationality = models.CharField(max_length=100, blank=True, default='')
+    roll_number = models.CharField(max_length=20, blank=True, default='')
+    parent_email = models.EmailField(blank=True, default='')
+    address = models.TextField(blank=True, default='')
     
-    # Day Scholar Specific
-    bus_route = models.CharField(max_length=100, blank=True, null=True)
-    pickup_person = models.CharField(max_length=100, blank=True, null=True)
-    pickup_notes = models.TextField(blank=True, null=True)
+    hostel = models.CharField(max_length=100, blank=True, default='')
     
-    # Boarding Specific
-    hostel = models.CharField(max_length=100, blank=True, null=True)
-    dormitory = models.CharField(max_length=100, blank=True, null=True)
-    bed_number = models.CharField(max_length=20, blank=True, null=True)
-    boarding_since = models.DateField(blank=True, null=True)
-    boarding_notes = models.TextField(blank=True, null=True)
-    visitation_days = models.CharField(max_length=100, blank=True, null=True)  # Comma-separated
-    leave_arrangements = models.CharField(max_length=50, blank=True, null=True)
+    blood_group = models.CharField(max_length=3, blank=True, default='')
+    allergies = models.TextField(blank=True, default='')
+    medical_conditions = models.TextField(blank=True, default='')
     
-    # Medical Information
-    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES, blank=True, null=True)
-    allergies = models.TextField(blank=True, null=True)
-    medical_conditions = models.TextField(blank=True, null=True)
-    doctor_info = models.TextField(blank=True, null=True)
-    
-    # Additional Information
-    special_notes = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
-    
-    # System fields
     date_joined = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -122,7 +77,6 @@ class Student(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.admission_number:
-            # Auto-generate admission number if not provided
             last_student = Student.objects.filter(company=self.company).order_by('-id').first()
             if last_student and last_student.admission_number:
                 try:
@@ -133,13 +87,10 @@ class Student(models.Model):
             else:
                 new_number = 1
             self.admission_number = f"STU{new_number:06d}"
-        
         super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.admission_number})"
-
-
 
 
 class StudentClass(models.Model):
