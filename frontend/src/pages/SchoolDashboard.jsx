@@ -93,8 +93,8 @@ export default function SchoolDashboard() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <Text className="mt-4 text-gray-600">Loading dashboard...</Text>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 dark:border-purple-400 mx-auto"></div>
+          <Text className="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</Text>
         </div>
       </div>
     );
@@ -103,23 +103,23 @@ export default function SchoolDashboard() {
   const { stats, recentActivities } = dashboardData;
 
   return (
-    <div className="space-y-6 p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <div className="space-y-6 p-6 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 min-h-screen">
       {/* Header */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-sm p-6 border border-slate-200"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm dark:shadow-gray-900 p-6 border border-slate-200 dark:border-gray-700"
       >
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center">
           <div>
-            <AntTitle level={2} className="!mb-1 text-slate-800 flex items-center gap-3">
+            <AntTitle level={2} className="!mb-1 text-slate-800 dark:text-gray-100 flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <ClassOutlined className="text-white text-2xl" />
               </div>
               School Dashboard
             </AntTitle>
-            <Text type="secondary" className="text-base">
-              Welcome back, <span className="font-semibold text-slate-700">{user?.name || 'Administrator'}</span>
+            <Text type="secondary" className="text-base text-gray-600 dark:text-gray-400">
+              Welcome back, <span className="font-semibold text-slate-700 dark:text-gray-300">{user?.name || 'Administrator'}</span>
             </Text>
           </div>
           <Space className="mt-4 lg:mt-0" size="middle">

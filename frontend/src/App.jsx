@@ -1,6 +1,6 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
 import DashboardSidebarLayout from './components/DashboardSidebarLayout';
 import Login from './pages/Login';
@@ -13,13 +13,17 @@ import ClassManagementPage from './pages/classrooms/ViewClassroom';
 import CreateClassPage from './pages/classrooms/AddClassRoom';
 import StaffManagementPage from './pages/staff/StaffManagementPage';
 import CreateStaffPage from './pages/staff/CreateStaffPage';
+import FeeManagement from './pages/fees/FeeManagement';
+import StructureManagement from './pages/fees/StructureManagement';
+import PaymentManagement from './pages/fees/PaymentManagement';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -57,15 +61,21 @@ function App() {
                     <Route path="staff/add" element={<CreateStaffPage />} />
                     <Route path="staff/edit/:id" element={<CreateStaffPage />} />
 
+                    {/* Fee Management Routes */}
+                    <Route path="fees" element={<FeeManagement />} />
+                    <Route path="fees/structures" element={<StructureManagement />} />
+                    <Route path="fees/payments" element={<PaymentManagement />} />
+
                     {/* Add other School sub-routes here */}
                   </Routes>
                 </DashboardSidebarLayout>
               </PrivateRoute>
             } 
           />
-        </Routes>
-      </Router>
-    </AuthProvider>
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

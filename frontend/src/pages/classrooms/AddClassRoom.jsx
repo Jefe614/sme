@@ -51,10 +51,11 @@ export default function CreateClassPage() {
   const fetchTeachers = async () => {
     try {
       const response = await getTeachers();
-      setTeachers(response.data);
+      setTeachers(response.data?.teachers || []);
     } catch (error) {
       console.error("Error fetching teachers:", error);
       message.error("Failed to load teachers");
+      setTeachers([]);
     }
   };
 

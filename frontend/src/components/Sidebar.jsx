@@ -193,7 +193,7 @@ export default function Sidebar({ userType, onCollapse }) {
   const siderContent = (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-white">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="flex items-center space-x-3">
           <Avatar
             size="large"
@@ -205,11 +205,11 @@ export default function Sidebar({ userType, onCollapse }) {
           />
           {!collapsed && (
             <div>
-              <Text strong className="text-base">
+              <Text strong className="text-base text-gray-900 dark:text-gray-100">
                 {userType === 'SME' ? 'SME Portal' : 'School Portal'}
               </Text>
               <br />
-              <Text type="secondary" className="text-xs">
+              <Text type="secondary" className="text-xs dark:text-gray-400">
                 Management System
               </Text>
             </div>
@@ -225,7 +225,7 @@ export default function Sidebar({ userType, onCollapse }) {
           style={{ border: 'none' }}
           onClick={handleMenuClick}
           inlineCollapsed={collapsed}
-          theme="light"
+          theme="dark"
         >
           {menuItems.map((item) => (
             <Menu.Item key={item.key} icon={item.icon}>
@@ -239,7 +239,7 @@ export default function Sidebar({ userType, onCollapse }) {
 
       {/* User Profile */}
       {!collapsed && (
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
           <div className="flex items-center space-x-3">
             <Avatar
               size="default"
@@ -247,10 +247,10 @@ export default function Sidebar({ userType, onCollapse }) {
               icon={<UserOutlined />}
             />
             <div className="flex-1 min-w-0">
-              <Text strong className="text-sm block truncate">
+              <Text strong className="text-sm block truncate text-gray-900 dark:text-gray-100">
                 Administrator
               </Text>
-              <Text type="secondary" className="text-xs block truncate">
+              <Text type="secondary" className="text-xs block truncate dark:text-gray-400">
                 admin@school.com
               </Text>
             </div>
@@ -281,20 +281,20 @@ export default function Sidebar({ userType, onCollapse }) {
           collapsed={collapsed}
           onCollapse={toggleCollapse}
           trigger={
-            <div className="flex items-center justify-center h-12 border-t border-gray-200">
+            <div className="flex items-center justify-center h-12 border-t border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800">
               {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             </div>
           }
           width={280}
           collapsedWidth={80}
-          className="shadow-lg border-r border-gray-200"
+          className="shadow-lg border-r border-gray-200 dark:border-gray-700"
           style={{
             position: 'fixed',
             left: 0,
             top: 0,
             bottom: 0,
             zIndex: 100,
-            backgroundColor: '#fff'
+            backgroundColor: 'transparent'
           }}
         >
           {siderContent}

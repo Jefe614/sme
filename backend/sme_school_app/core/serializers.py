@@ -1,7 +1,8 @@
 from rest_framework import serializers
+from django.db.models import Sum
 
 from tenants.models import Company
-from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment
+from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -47,15 +48,42 @@ class StudentSerializer(serializers.ModelSerializer):
 class FeePaymentSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.get_full_name', read_only=True)
     admission_number = serializers.CharField(source='student.admission_number', read_only=True)
-    
+
     class Meta:
         model = FeePayment
         fields = '__all__'
-    
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['date_paid'] = instance.date_paid.isoformat()
+        data['date_paid'] = instance.payment_date.isoformat()
         return data
+
+
+class FeeStructureSerializer(serializers.ModelSerializer):
+    student_count = serializers.SerializerMethodField()
+    total_paid = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FeeStructure
+        fields = '__all__'
+
+    def get_student_count(self, obj):
+        return obj.payments.filter(payment_status='completed').distinct('student').count()
+
+    def get_total_paid(self, obj):
+        return obj.payments.filter(payment_status='completed').aggregate(
+            total=Sum('amount_paid')
+        )['total'] or 0
+
+
+class FeeDiscountSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.get_full_name', read_only=True)
+    admission_number = serializers.CharField(source='student.admission_number', read_only=True)
+    fee_structure_name = serializers.CharField(source='fee_structure.name', read_only=True)
+
+    class Meta:
+        model = FeeDiscount
+        fields = '__all__'
     
 
 class StudentClassSerializer(serializers.ModelSerializer):

@@ -28,37 +28,37 @@ const { handleLogin } = useContext(AuthContext);
     }
   };
   return (
-    <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-100 to-blue-200">
+    <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-100 to-blue-200 dark:from-gray-800 dark:to-gray-900">
       <motion.form
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         onSubmit={handleSubmit}
-        className="bg-white p-10 rounded-xl shadow-lg w-96"
+        className="bg-white dark:bg-gray-800 p-10 rounded-xl shadow-lg w-96"
       >
-        <h2 className="text-3xl font-bold text-center mb-6 text-blue-600">Login</h2>
+        <h2 className="text-3xl font-bold text-center mb-6 text-blue-600 dark:text-blue-400">Login</h2>
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
 
         <div className="relative mb-4">
-          <FaUser className="absolute top-3 left-3 text-gray-400" />
+          <FaUser className="absolute top-3 left-3 text-gray-400 dark:text-gray-500" />
           <input
             name="username"
             placeholder="Username"
             value={formData.username}
             onChange={handleChange}
-            className="w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            className="w-full pl-10 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
 
         <div className="relative mb-6">
-          <FaLock className="absolute top-3 left-3 text-gray-400" />
+          <FaLock className="absolute top-3 left-3 text-gray-400 dark:text-gray-500" />
           <input
             name="password"
             type="password"
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            className="w-full pl-10 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
 

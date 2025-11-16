@@ -102,8 +102,8 @@ export default function StudentsListPage() {
       key: 'name',
       render: (_, record) => (
         <div>
-          <div className="font-medium">{`${record.first_name} ${record.last_name}`}</div>
-          <div className="text-xs text-gray-500">{record.parent_name}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100">{`${record.first_name} ${record.last_name}`}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{record.parent_name}</div>
         </div>
       ),
     },
@@ -160,14 +160,14 @@ export default function StudentsListPage() {
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <Title level={2} className="!mb-1 !text-2xl sm:!text-3xl">
+          <Title level={2} className="!mb-1 !text-2xl sm:!text-3xl text-gray-900 dark:text-gray-100">
             Students Management
           </Title>
-          <p className="text-gray-600">View and manage all students in your school</p>
+          <p className="text-gray-600 dark:text-gray-400">View and manage all students in your school</p>
         </div>
 
         <Space wrap>
@@ -194,11 +194,11 @@ export default function StudentsListPage() {
       </div>
 
       {/* Search & Stats */}
-      <Card className="mb-6 shadow-sm">
+      <Card className="mb-6 shadow-sm bg-white dark:bg-gray-800">
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={16} lg={12}>
-            <Search 
-              placeholder="Search by name, admission no., or parent..." 
+            <Search
+              placeholder="Search by name, admission no., or parent..."
               enterButton={<SearchOutlined />}
               size="large"
               onSearch={handleSearch}
@@ -210,8 +210,8 @@ export default function StudentsListPage() {
           </Col>
           <Col xs={24} md={8} lg={12} className="text-right">
             <Space>
-              <span className="text-gray-600 font-medium">
-                Total: <strong className="text-blue-600">{pagination.total}</strong> students
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                Total: <strong className="text-blue-600 dark:text-blue-400">{pagination.total}</strong> students
               </span>
             </Space>
           </Col>
@@ -219,7 +219,7 @@ export default function StudentsListPage() {
       </Card>
 
       {/* Table */}
-      <Card className="shadow-sm">
+      <Card className="shadow-sm bg-white dark:bg-gray-800">
         <Spin spinning={loading}>
           <Table 
             columns={columns} 

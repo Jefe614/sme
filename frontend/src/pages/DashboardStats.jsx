@@ -21,13 +21,17 @@ export default function DashboardStats({ stats, navigate }) {
       key: 'students',
       title: 'Total Students',
       value: stats?.students?.total || 0,
-      icon: <UserOutlined className="text-blue-600" />,
-      bgColor: 'bg-blue-100',
-      change: stats?.students?.change || 0,
+      icon: <UserOutlined className="text-blue-500 dark:text-blue-400" />,
+      bgColor: 'bg-blue-100 dark:bg-blue-900',
+      textColor: 'text-gray-700 dark:text-gray-300',
+      titleColor: 'text-gray-700 dark:text-gray-300',
+      changeColor: 'text-green-600 dark:text-green-400',
+      changeBg: 'text-green-600 dark:text-green-400',
+      subtitleColor: 'text-gray-600 dark:text-gray-400',
       extra: (
-        <div className="mt-2 text-gray-700 text-sm flex items-center justify-center gap-2">
+        <div className="mt-2 text-gray-700 dark:text-gray-300 text-sm flex items-center justify-center gap-2">
           <ApartmentOutlined /> {stats?.students?.boarding || 0} Boarding
-          <span className="opacity-70">•</span>
+          <span className="opacity-70 dark:opacity-50">•</span>
           <HomeOutlined /> {stats?.students?.day || 0} Day
         </div>
       ),
@@ -38,9 +42,13 @@ export default function DashboardStats({ stats, navigate }) {
       key: 'teachers',
       title: 'Teaching Staff',
       value: stats?.teachers?.total || 0,
-      icon: <TeamOutlined className="text-green-600" />,
-      bgColor: 'bg-green-100',
-      change: stats?.teachers?.change || 0,
+      icon: <TeamOutlined className="text-green-500 dark:text-green-400" />,
+      bgColor: 'bg-green-100 dark:bg-green-900',
+      textColor: 'text-gray-700 dark:text-gray-300',
+      titleColor: 'text-gray-700 dark:text-gray-300',
+      changeColor: 'text-green-600 dark:text-green-400',
+      changeBg: 'text-red-600 dark:text-red-400',
+      subtitleColor: 'text-gray-600 dark:text-gray-400',
       subtitle: `1:${stats?.students?.total && stats?.teachers?.total ? Math.round(stats.students.total / stats.teachers.total) : 0} ratio`,
       onClick: () => navigate('/school-dashboard/teachers'),
       delay: 0.2
@@ -49,9 +57,13 @@ export default function DashboardStats({ stats, navigate }) {
       key: 'staff',
       title: 'Total Staff',
       value: stats?.staff?.total || 0,
-      icon: <UsergroupAddOutlined className="text-purple-600" />,
-      bgColor: 'bg-purple-100',
-      change: stats?.staff?.change || 0,
+      icon: <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400" />,
+      bgColor: 'bg-purple-100 dark:bg-purple-900',
+      textColor: 'text-gray-700 dark:text-gray-300',
+      titleColor: 'text-gray-700 dark:text-gray-300',
+      changeColor: 'text-green-600 dark:text-green-400',
+      changeBg: 'text-red-600 dark:text-red-400',
+      subtitleColor: 'text-gray-600 dark:text-gray-400',
       subtitle: `${stats?.staff?.by_type?.labels?.length || 0} departments`,
       onClick: () => navigate('/school-dashboard/staff'),
       delay: 0.3
@@ -60,9 +72,13 @@ export default function DashboardStats({ stats, navigate }) {
       key: 'classes',
       title: 'Active Classes',
       value: stats?.classes?.total || 0,
-      icon: <ClassOutlined className="text-orange-600" />,
-      bgColor: 'bg-orange-100',
-      change: stats?.classes?.change || 0,
+      icon: <ClassOutlined className="text-orange-500 dark:text-orange-400" />,
+      bgColor: 'bg-orange-100 dark:bg-orange-900',
+      textColor: 'text-gray-700 dark:text-gray-300',
+      titleColor: 'text-gray-700 dark:text-gray-300',
+      changeColor: 'text-green-600 dark:text-green-400',
+      changeBg: 'text-red-600 dark:text-red-400',
+      subtitleColor: 'text-gray-600 dark:text-gray-400',
       subtitle: stats?.classes?.total > 0 ? `Avg ${Math.round(stats.students.total / stats.classes.total)} students/class` : 'No classes yet',
       onClick: () => navigate('/school-dashboard/classes'),
       delay: 0.4
@@ -117,12 +133,12 @@ export default function DashboardStats({ stats, navigate }) {
                 className={`${card.bgColor} cursor-pointer rounded-2xl p-6 flex flex-col items-center shadow-md hover:shadow-lg transition-all`}
               >
                 <div className="text-4xl mb-2">{card.icon}</div>
-                <div className="text-3xl font-bold">{card.value}</div>
-                <div className="mt-2 text-gray-700 text-sm">{card.title}</div>
-                {card.subtitle && <div className="mt-1 text-gray-600 text-xs">{card.subtitle}</div>}
+                <div className={`text-3xl font-bold ${card.textColor}`}>{card.value}</div>
+                <div className={`mt-2 ${card.titleColor} text-sm`}>{card.title}</div>
+                {card.subtitle && <div className={`mt-1 ${card.subtitleColor} text-xs`}>{card.subtitle}</div>}
                 {card.extra && <div className="mt-2">{card.extra}</div>}
                 {card.change !== 0 && (
-                  <div className={`mt-2 text-sm font-medium ${card.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className={`mt-2 text-sm font-medium ${card.change > 0 ? card.changeColor : card.changeBg}`}>
                     {card.change > 0 ? '↑' : '↓'} {Math.abs(card.change)}% from last month
                   </div>
                 )}

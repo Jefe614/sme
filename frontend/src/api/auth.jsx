@@ -46,7 +46,37 @@ export const getSubjects = () => api.get("/subjects/");
 export const createSubject = (data) => api.post("/subjects/", data);
 
 // Bulk operations
-export const bulkImportStudents = (formData) => 
+export const bulkImportStudents = (formData) =>
   api.post("/students/bulk-import/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+
+// Fee Management
+export const getFeeStructures = (params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  return api.get(`/fee-structures/?${queryString}`);
+};
+
+export const createFeeStructure = (data) => api.post("/fee-structures/", data);
+export const updateFeeStructure = (id, data) => api.patch(`/fee-structures/${id}/`, data);
+export const deleteFeeStructure = (id) => api.delete(`/fee-structures/${id}/`);
+
+export const getFeePayments = (params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  return api.get(`/fee-payments/?${queryString}`);
+};
+
+export const createFeePayment = (data) => api.post("/fee-payments/", data);
+export const updateFeePayment = (id, data) => api.patch(`/fee-payments/${id}/`, data);
+export const deleteFeePayment = (id) => api.delete(`/fee-payments/${id}/`);
+
+export const getFeeDiscounts = (params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  return api.get(`/fee-discounts/?${queryString}`);
+};
+
+export const createFeeDiscount = (data) => api.post("/fee-discounts/", data);
+export const updateFeeDiscount = (id, data) => api.patch(`/fee-discounts/${id}/`, data);
+export const deleteFeeDiscount = (id) => api.delete(`/fee-discounts/${id}/`);
+
+export const getFeeReports = () => api.get("/fee-reports/");

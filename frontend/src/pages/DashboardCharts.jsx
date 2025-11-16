@@ -39,16 +39,17 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
       {
         label: 'Fees Collected (KSh)',
         data: dashboardData.feeTrend.data || [],
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-        borderColor: 'rgb(99, 102, 241)',
+        backgroundColor: 'rgba(147, 51, 234, 0.2)', // Purple with opacity for fill
+        borderColor: '#8b5cf6', // Bright purple
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: 'rgb(99, 102, 241)',
-        pointBorderColor: '#fff',
+        pointRadius: 5,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#8b5cf6',
         pointBorderWidth: 2,
-        pointHoverRadius: 6,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: '#8b5cf6',
       },
     ],
   };
@@ -108,10 +109,10 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(31, 41, 55, 0.95)',
         padding: 12,
-        titleColor: 'white',
-        bodyColor: 'white',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
         cornerRadius: 8,
         displayColors: false,
       },
@@ -119,12 +120,14 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
     scales: {
       y: {
         beginAtZero: true,
-        grid: { color: 'rgba(0, 0, 0, 0.05)' },
-        ticks: { color: 'rgba(0, 0, 0, 0.6)' },
+        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+        ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+        border: { color: 'rgba(255, 255, 255, 0.2)' },
       },
       x: {
-        grid: { display: false },
-        ticks: { color: 'rgba(0, 0, 0, 0.6)' },
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+        ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+        border: { color: 'rgba(255, 255, 255, 0.2)' },
       },
     },
   };
@@ -152,19 +155,19 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
 
   const getActivityIcon = (type) => {
     switch(type) {
-      case 'student': return <UserOutlined className="text-blue-600" />;
-      case 'teacher': return <TeamOutlined className="text-green-600" />;
-      case 'payment': return <DollarOutlined className="text-purple-600" />;
-      default: return <FileTextOutlined className="text-gray-600" />;
+      case 'student': return <UserOutlined className="text-blue-600 dark:text-blue-400" />;
+      case 'teacher': return <TeamOutlined className="text-green-600 dark:text-green-400" />;
+      case 'payment': return <DollarOutlined className="text-purple-600 dark:text-purple-400" />;
+      default: return <FileTextOutlined className="text-gray-600 dark:text-gray-400" />;
     }
   };
 
   const getActivityColor = (type) => {
     switch(type) {
-      case 'student': return 'border-l-blue-500 bg-blue-50';
-      case 'teacher': return 'border-l-green-500 bg-green-50';
-      case 'payment': return 'border-l-purple-500 bg-purple-50';
-      default: return 'border-l-gray-500 bg-gray-50';
+      case 'student': return 'border-l-blue-500 bg-blue-50 dark:bg-blue-900';
+      case 'teacher': return 'border-l-green-500 bg-green-50 dark:bg-green-900';
+      case 'payment': return 'border-l-purple-500 bg-purple-50 dark:bg-purple-900';
+      default: return 'border-l-gray-500 bg-gray-50 dark:bg-gray-700';
     }
   };
 
@@ -179,14 +182,14 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
           >
-            <Card 
+            <Card
               title={
                 <div className="flex items-center gap-2">
-                  <RiseOutlined className="text-purple-600" />
-                  <span>Fee Collection Trend</span>
+                  <RiseOutlined className="text-purple-600 dark:text-purple-400" />
+                  <span className="text-gray-900 dark:text-gray-100">Fee Collection Trend</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200"
+              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
             >
               <div style={{ height: '250px' }}>
                 {dashboardData.feeTrend.data.length > 0 ? (
@@ -209,14 +212,14 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
               >
-                <Card 
+                <Card
                   title={
                     <div className="flex items-center gap-2">
-                      <ClassOutlined className="text-orange-600" />
-                      <span>Class Distribution</span>
+                      <ClassOutlined className="text-orange-600 dark:text-orange-400" />
+                      <span className="text-gray-900 dark:text-gray-100">Class Distribution</span>
                     </div>
                   }
-                  className="rounded-2xl shadow-md border-slate-200"
+                  className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
                 >
                   <div style={{ height: '250px' }}>
                     {dashboardData.classDistribution.data.length > 0 ? (
@@ -238,14 +241,14 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.9 }}
               >
-                <Card 
+                <Card
                   title={
                     <div className="flex items-center gap-2">
-                      <UserOutlined className="text-blue-600" />
-                      <span>Gender Distribution</span>
+                      <UserOutlined className="text-blue-600 dark:text-blue-400" />
+                      <span className="text-gray-900 dark:text-gray-100">Gender Distribution</span>
                     </div>
                   }
-                  className="rounded-2xl shadow-md border-slate-200"
+                  className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
                 >
                   <div style={{ height: '250px' }}>
                     {stats.students.total > 0 ? (
@@ -268,14 +271,14 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.0 }}
           >
-            <Card 
+            <Card
               title={
                 <div className="flex items-center gap-2">
-                  <DollarOutlined className="text-green-600" />
-                  <span>Fee Structure Breakdown</span>
+                  <DollarOutlined className="text-green-600 dark:text-green-400" />
+                  <span className="text-gray-900 dark:text-gray-100">Fee Structure Breakdown</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200"
+              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
             >
               <div style={{ height: '280px' }}>
                 {dashboardData.feeBreakdown.data.length > 0 ? (
@@ -301,13 +304,13 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
           >
-            <Card 
+            <Card
               title={
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold">⚡ Quick Actions</span>
+                  <span className="text-base font-semibold text-gray-900 dark:text-gray-100">⚡ Quick Actions</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200"
+              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
             >
               <div className="space-y-3">
                 {quickActions.map((action, idx) => (
@@ -337,22 +340,22 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
           >
-            <Card 
+            <Card
               title={
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold">📊 School Overview</span>
+                  <span className="text-base font-semibold text-gray-900 dark:text-gray-100">📊 School Overview</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200"
+              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
             >
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between mb-2">
-                    <Text className="text-sm font-medium">Student Capacity</Text>
-                    <Text strong className="text-blue-600">{stats.students.total}/500</Text>
+                    <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">Student Capacity</Text>
+                    <Text strong className="text-blue-600 dark:text-blue-400">{stats.students.total}/500</Text>
                   </div>
-                  <Progress 
-                    percent={Math.min((stats.students.total / 500) * 100, 100)} 
+                  <Progress
+                    percent={Math.min((stats.students.total / 500) * 100, 100)}
                     strokeColor={{
                       '0%': '#3b82f6',
                       '100%': '#8b5cf6',
@@ -361,34 +364,34 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                     className="custom-progress"
                   />
                 </div>
-                
+
                 <div>
                   <div className="flex justify-between mb-2">
-                    <Text className="text-sm font-medium">Student-Teacher Ratio</Text>
-                    <Text strong className="text-green-600">
-                      {stats.students.total > 0 && stats.teachers.total > 0 
+                    <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">Student-Teacher Ratio</Text>
+                    <Text strong className="text-green-600 dark:text-green-400">
+                      {stats.students.total > 0 && stats.teachers.total > 0
                         ? `1:${Math.round(stats.students.total / stats.teachers.total)}`
                         : 'N/A'
                       }
                     </Text>
                   </div>
-                  <Progress 
-                    percent={Math.min((stats.teachers.total / 20) * 100, 100)} 
+                  <Progress
+                    percent={Math.min((stats.teachers.total / 20) * 100, 100)}
                     strokeColor="#10b981"
                     strokeWidth={10}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-                    <ManOutlined className="text-2xl text-blue-600 mb-1" />
-                    <Text strong className="block text-blue-700 text-lg">{stats.students.male}</Text>
-                    <Text type="secondary" className="text-xs">Male Students</Text>
+                  <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-700 dark:to-gray-600 rounded-xl border border-blue-200 dark:border-gray-600">
+                    <ManOutlined className="text-2xl text-blue-600 dark:text-blue-400 mb-1" />
+                    <Text strong className="block text-blue-700 dark:text-blue-300 text-lg">{stats.students.male}</Text>
+                    <Text type="secondary" className="text-xs text-gray-600 dark:text-gray-400">Male Students</Text>
                   </div>
-                  <div className="text-center p-3 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl border border-pink-200">
-                    <WomanOutlined className="text-2xl text-pink-600 mb-1" />
-                    <Text strong className="block text-pink-700 text-lg">{stats.students.female}</Text>
-                    <Text type="secondary" className="text-xs">Female Students</Text>
+                  <div className="text-center p-3 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-gray-700 dark:to-gray-600 rounded-xl border border-pink-200 dark:border-gray-600">
+                    <WomanOutlined className="text-2xl text-pink-600 dark:text-pink-400 mb-1" />
+                    <Text strong className="block text-pink-700 dark:text-pink-300 text-lg">{stats.students.female}</Text>
+                    <Text type="secondary" className="text-xs text-gray-600 dark:text-gray-400">Female Students</Text>
                   </div>
                 </div>
               </div>
@@ -401,16 +404,16 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 }}
           >
-            <Card 
+            <Card
               title={
                 <div className="flex items-center gap-2">
-                  <ClockCircleOutlined className="text-purple-600" />
-                  <span>Recent Activities</span>
+                  <ClockCircleOutlined className="text-purple-600 dark:text-purple-400" />
+                  <span className="text-gray-900 dark:text-gray-100">Recent Activities</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200"
+              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
               extra={
-                <Button type="link" size="small" className="text-purple-600">
+                <Button type="link" size="small" className="text-purple-600 dark:text-purple-400">
                   View All
                 </Button>
               }
@@ -429,10 +432,10 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                         {getActivityIcon(activity.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <Text className="block text-sm font-medium text-gray-800 truncate">
+                        <Text className="block text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
                           {activity.description}
                         </Text>
-                        <Text type="secondary" className="text-xs flex items-center gap-1 mt-1">
+                        <Text type="secondary" className="text-xs flex items-center gap-1 mt-1 text-gray-600 dark:text-gray-400">
                           <ClockCircleOutlined className="text-xs" />
                           {activity.time}
                         </Text>
@@ -440,7 +443,7 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                     </motion.div>
                   ))
                 ) : (
-                  <Empty 
+                  <Empty
                     description="No recent activities"
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                   />
@@ -454,22 +457,22 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
   );
 }
 
-// Add custom scrollbar styling
+// Add custom scrollbar styling for dark mode
 const style = document.createElement('style');
 style.textContent = `
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 10px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: rgba(255, 255, 255, 0.5);
   }
 `;
 document.head.appendChild(style);
