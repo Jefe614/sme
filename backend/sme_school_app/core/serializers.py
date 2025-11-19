@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 
 from tenants.models import Company
-from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount
+from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -124,4 +124,13 @@ class StaffSerializer(serializers.ModelSerializer):
             'basic_salary', 'bank_name', 'bank_account_number', 'bank_branch', 'blood_group',
             'allergies', 'medical_conditions', 'doctor_info', 'bio', 'notes', 'is_active',
             'is_teaching_staff', 'created_at'
+        ]
+
+
+class DocumentTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentTemplate
+        fields = [
+            'id', 'name', 'category', 'template_body', 'description',
+            'is_default', 'is_active', 'variables_used', 'created_at', 'updated_at'
         ]

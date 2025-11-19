@@ -136,6 +136,12 @@ export default function Sidebar({ userType, onCollapse }) {
       path: '/school-dashboard/staff'
     },
     {
+      key: '/school-dashboard/templates',
+      icon: <FileTextOutlined />,
+      label: 'Document Templates',
+      path: '/school-dashboard/templates'
+    },
+    {
       key: '/school-dashboard/analytics',
       icon: <BarChartOutlined />,
       label: 'Analytics',

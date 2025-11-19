@@ -17,6 +17,7 @@ import FeeManagement from './pages/fees/FeeManagement';
 import StructureManagement from './pages/fees/StructureManagement';
 import PaymentManagement from './pages/fees/PaymentManagement';
 import NotFoundPage from './pages/NotFoundPage';
+import TemplateManagement from './pages/documents/TemplateManagement';
 
 function App() {
   return (
@@ -65,6 +66,10 @@ function App() {
                     <Route path="fees" element={<FeeManagement />} />
                     <Route path="fees/structures" element={<StructureManagement />} />
                     <Route path="fees/payments" element={<PaymentManagement />} />
+
+                    <Route path="templates" element={<TemplateManagement />} />
+
+
 
                     {/* Add other School sub-routes here */}
                   </Routes>

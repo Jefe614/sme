@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import CompanyAPIView, LoginAPIView, SchoolDashboardSummaryAPIView, SignupAPIView, StaffAPIView, StudentClassView, TeacherAPIView, TransactionAPIView, StudentAPIView
 from .fees import FeeStructureAPIView, FeePaymentAPIView, FeeDiscountAPIView, FeeReportingAPIView
+from .documents import DocumentTemplateAPIView, DocumentTemplateDetailAPIView, TemplateCategoriesAPIView, GenerateDocumentAPIView
 
 urlpatterns = [
     path("signup/", SignupAPIView.as_view(), name="signup"),
@@ -23,4 +24,10 @@ urlpatterns = [
     path("fee-discounts/", FeeDiscountAPIView.as_view(), name="fee-discounts"),
     path("fee-discounts/<int:pk>/", FeeDiscountAPIView.as_view(), name="fee-discount-detail"),
     path("fee-reports/", FeeReportingAPIView.as_view(), name="fee-reports"),
+
+    # Document Template URLs
+    path("templates/", DocumentTemplateAPIView.as_view(), name="templates"),
+    path("templates/<int:template_id>/", DocumentTemplateDetailAPIView.as_view(), name="template-detail"),
+    path("template-categories/", TemplateCategoriesAPIView.as_view(), name="template-categories"),
+    path("generate-document/", GenerateDocumentAPIView.as_view(), name="generate-document"),
 ]

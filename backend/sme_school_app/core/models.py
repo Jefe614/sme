@@ -604,3 +604,55 @@ class StaffAttendance(models.Model):
     def __str__(self):
         return f"{self.staff} - {self.date} - {self.status}"
 
+
+# Document Template Model for customizable school documents
+class DocumentTemplate(models.Model):
+    TEMPLATE_CATEGORIES = (
+        ('admission', 'Admission Letter'),
+        ('transfer', 'Transfer Letter'),
+        ('warning', 'Warning Letter'),
+        ('suspension', 'Suspension Letter'),
+        ('fee_reminder', 'Fee Reminder'),
+        ('clearance', 'Clearance Form'),
+        ('invitation', 'Meeting Invitation'),
+        ('notice', 'School Notice'),
+        ('recommendation', 'Student Recommendation'),
+        ('employment', 'Employment Contract'),
+        ('custom', 'Custom Template'),
+    )
+
+    company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
+    name = models.CharField(max_length=200, help_text="Template name, e.g., 'Admission Letter 2024'")
+    category = models.CharField(max_length=20, choices=TEMPLATE_CATEGORIES, default='custom')
+
+    # Template Content
+    template_body = models.TextField(help_text="Template with {{placeholders}} for dynamic content")
+    description = models.TextField(blank=True, null=True, help_text="Description of template purpose and variables used")
+
+    # Metadata
+    is_default = models.BooleanField(default=False, help_text="Whether this is a system default template")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Variables used in template (stored as JSON for easy access)
+    variables_used = models.JSONField(default=list, help_text="List of variable names used in the template")
+
+    class Meta:
+        verbose_name = 'Document Template'
+        verbose_name_plural = 'Document Templates'
+        db_table = 'document_templates'
+        unique_together = ['company', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.category}) - {self.company.name}"
+
+    def get_variables(self):
+        """Extract variables from template_body"""
+        import re
+        return re.findall(r'\{\{(\w+)\}\}', self.template_body)
+
+    def save(self, *args, **kwargs):
+        if not self.variables_used:
+            self.variables_used = self.get_variables()
+        super().save(*args, **kwargs)
