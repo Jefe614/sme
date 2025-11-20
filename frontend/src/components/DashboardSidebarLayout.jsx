@@ -41,13 +41,12 @@ export default function DashboardSidebarLayout({ userType, children }) {
       <Layout
         className="transition-all duration-300"
         style={{
-          marginLeft: isMobile ? 0 : (sidebarCollapsed ? 80 : 280),
+          marginLeft: isMobile ? 0 : (sidebarCollapsed ? 80 : 250),
           minHeight: '100vh',
           backgroundColor: PRIMARY_COLOR,
           color: TEXT_COLOR
         }}
       >
-        {/* Header */}
         <Header
           style={{
             backgroundColor: PRIMARY_COLOR,
@@ -58,23 +57,18 @@ export default function DashboardSidebarLayout({ userType, children }) {
             alignItems: 'center',
             justifyContent: 'space-between',
             color: TEXT_COLOR,
-            height: '84px',
+            height: '56px',
             zIndex: 10
           }}
         >
-          {/* Left side: Dashboard title */}
           <h1 style={{ color: TEXT_COLOR, fontWeight: 600, fontSize: '18px' }}>
-            {/* {userType === 'SME' ? 'SME Dashboard' : 'School Dashboard'} */}
           </h1>
 
-          {/* Right side: Notifications & Profile */}
           <div className="flex items-center gap-4">
-            {/* Notifications */}
             <Badge count={5} size="small" style={{ backgroundColor: BADGE_COLOR }}>
               <BellOutlined style={{ fontSize: '20px', color: TEXT_COLOR, cursor: 'pointer' }} />
             </Badge>
 
-            {/* Profile */}
             <div className="flex items-center gap-2">
               <Avatar style={{ backgroundColor: SECONDARY_COLOR }} icon={<UserOutlined />} size="small" />
               <span style={{ color: TEXT_COLOR, fontSize: '14px', fontWeight: 500 }}>
@@ -84,7 +78,6 @@ export default function DashboardSidebarLayout({ userType, children }) {
           </div>
         </Header>
 
-        {/* Content */}
         <Content
           style={{
             backgroundColor: '#F8FAFC',

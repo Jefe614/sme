@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 
 from tenants.models import Company
-from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate
+from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate, Notification
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -134,3 +134,23 @@ class DocumentTemplateSerializer(serializers.ModelSerializer):
             'id', 'name', 'category', 'template_body', 'description',
             'is_default', 'is_active', 'variables_used', 'created_at', 'updated_at'
         ]
+
+
+
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.get_full_name', read_only=True)
+    admission_number = serializers.CharField(source='student.admission_number', read_only=True)
+    parent_name = serializers.CharField(source='student.parent_name', read_only=True)
+    sent_by_name = serializers.CharField(source='sent_by.full_name', read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 'notification_type', 'subject', 'message', 'recipient_email',
+            'recipient_phone', 'student', 'student_name', 'admission_number', 'parent_name',
+            'priority', 'status', 'scheduled_at', 'sent_at', 'sent_by', 'sent_by_name',
+            'error_message', 'reference_number', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['status', 'sent_at', 'error_message', 'reference_number', 'created_at', 'updated_at']

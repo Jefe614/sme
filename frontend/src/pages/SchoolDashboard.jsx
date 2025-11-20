@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Card, Row, Col, Button, Badge, Alert, Typography, Space, message } from 'antd';
-import { 
+import { Card, Row, Col, Button, Badge, Typography, Space, message } from 'antd';
+import {
   UserOutlined,
   TeamOutlined,
   BellOutlined,
@@ -12,6 +12,7 @@ import {
   UsergroupAddOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
+import { handleApiError, showNotification } from '../utils/notifications';
 import api from '../api/apiClient';
 import { useNavigate } from 'react-router-dom';
 import DashboardStats from './DashboardStats';
@@ -39,7 +40,6 @@ export default function SchoolDashboard() {
     recentActivities: [],
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchDashboard();
@@ -48,19 +48,17 @@ export default function SchoolDashboard() {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
       const response = await api.get('/school-dashboard-summary/');
       setDashboardData(response.data);
-      
     } catch (err) {
       console.error('Dashboard API error:', err);
-      setError('Failed to load dashboard data. Please try again.');
-      message.error('Failed to load dashboard data');
+      handleApiError(err, 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const quickActions = [
     { 
@@ -142,22 +140,6 @@ export default function SchoolDashboard() {
           </Space>
         </div>
       </motion.div>
-
-      {/* Alerts */}
-      {error && (
-        <Alert
-          message="Error"
-          description={error}
-          type="error"
-          showIcon
-          action={
-            <Button size="small" onClick={fetchDashboard}>
-              Retry
-            </Button>
-          }
-          className="rounded-xl"
-        />
-      )}
 
       {/* Stats Component */}
       <DashboardStats stats={stats} navigate={navigate} />

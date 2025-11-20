@@ -14,9 +14,10 @@ from rest_framework.permissions import AllowAny
 
 from tenants.models import Company, Domain
 
-from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment
+from .models import Notification, Staff, StudentClass, Subject, Transaction, Student, FeePayment
 from .serializers import (
     CompanySerializer,
+    NotificationSerializer,
     StaffSerializer,
     StudentClassSerializer,
     TransactionSerializer,
@@ -1217,3 +1218,89 @@ class TransactionAPIView(APIView):
             transaction = Transaction(company=company, description=description, amount=amount, is_income=is_income)
             transaction.save()
             return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
+
+
+# -------------------- Parent Portal Views (Simplified for Mobile Apps) --------------------
+class ParentLoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        phone = request.data.get("phone")
+        password = request.data.get("password")
+
+        if not phone or not password:
+            return Response({"message": "Phone and password are required"}, status=400)
+
+        # For mobile apps, parents would authenticate based on their child requests
+        # This is a placeholder - actual authentication would be handled by mobile app
+        return Response({
+            "message": "Mobile app authentication handled separately",
+            "note": "Parent contact information comes from student records"
+        })
+
+
+# -------------------- Notification Views --------------------
+from .tasks import send_bulk_notifications, send_fee_reminder_notifications
+
+class NotificationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get all notifications for the company"""
+        company = request.company
+        if not company:
+            return Response({"error": "No tenant found"}, status=400)
+
+        notifications = Notification.objects.filter(company=company).order_by('-created_at')
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Send notification to parent(s) of students"""
+        company = request.company
+        data = request.data
+
+        notification_type = data.get("notification_type")
+        subject = data.get("subject")
+        message = data.get("message")
+        student_ids = data.get("student_ids", [])
+
+        if not all([notification_type, subject, message, student_ids]):
+            return Response({
+                "error": "notification_type, subject, message, and student_ids are required"
+            }, status=400)
+
+        # Send bulk notifications
+        task = send_bulk_notifications.delay(
+            student_ids,
+            notification_type,
+            subject,
+            message,
+            getattr(request.user.staff, 'id', None) if hasattr(request.user, 'staff') else None
+        )
+
+        return Response({
+            "message": f"Notifications queued for parents of {len(student_ids)} students",
+            "task_id": task.id
+        })
+
+
+class FeeReminderNotificationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Send fee reminder notifications to all parents with pending fees"""
+        company = request.company
+        if not company:
+            return Response({"error": "No tenant found"}, status=400)
+
+        if company.company_type != "SCHOOL":
+            return Response({"error": "Only school companies can send fee reminders"}, status=400)
+
+        # Trigger the fee reminder task
+        task = send_fee_reminder_notifications.delay()
+
+        return Response({
+            "message": "Fee reminder notifications have been queued",
+            "task_id": task.id
+        })

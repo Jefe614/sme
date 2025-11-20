@@ -216,7 +216,7 @@ export default function Sidebar({ userType, onCollapse }) {
           trigger={null}
           collapsible
           collapsed={collapsed}
-          width={280}
+          width={250}
           collapsedWidth={80}
           style={{
             position: 'fixed',
@@ -232,7 +232,7 @@ export default function Sidebar({ userType, onCollapse }) {
               display: 'flex', 
               flexDirection: 'column', 
               justifyContent: 'space-between', 
-              height: '100%' 
+              height: '96%' 
           }}>
             {siderContent}
 

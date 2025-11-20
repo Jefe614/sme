@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// import { ConfigProvider } from 'antd';
 import { AuthProvider } from './context/AuthContext';
 // import { ThemeProvider } from './context/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -18,32 +19,32 @@ import StructureManagement from './pages/fees/StructureManagement';
 import PaymentManagement from './pages/fees/PaymentManagement';
 import NotFoundPage from './pages/NotFoundPage';
 import TemplateManagement from './pages/documents/TemplateManagement';
+import NotificationManagement from './pages/notifications/NotificationManagement';
 
 function App() {
   return (
-    // <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
-          {/* SME Dashboard with Layout */}
-          <Route 
-            path="/sme-dashboard/*" 
-            element={
-              <PrivateRoute>
-                <DashboardSidebarLayout userType="SME">
-                  <Routes>
-                    <Route index element={<SmeDashboard />} />
-                    {/* Add other SME sub-routes here */}
-                  </Routes>
-                </DashboardSidebarLayout>
-              </PrivateRoute>
-            } 
-          />
-          
+        <AuthProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Navigate to="/login" />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+
+              {/* SME Dashboard with Layout */}
+              <Route
+                path="/sme-dashboard/*"
+                element={
+                  <PrivateRoute>
+                    <DashboardSidebarLayout userType="SME">
+                      <Routes>
+                        <Route index element={<SmeDashboard />} />
+                        {/* Add other SME sub-routes here */}
+                      </Routes>
+                    </DashboardSidebarLayout>
+                  </PrivateRoute>
+                }
+              />
+
           {/* School Dashboard with Layout */}
           <Route 
             path="/school-dashboard/*" 
@@ -68,6 +69,7 @@ function App() {
                     <Route path="fees/payments" element={<PaymentManagement />} />
 
                     <Route path="templates" element={<TemplateManagement />} />
+                    <Route path="notifications" element={<NotificationManagement />} />
 
 
 
@@ -80,7 +82,6 @@ function App() {
           </Routes>
         </Router>
       </AuthProvider>
-    // </ThemeProvider>
   );
 }
 

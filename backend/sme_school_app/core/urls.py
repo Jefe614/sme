@@ -1,5 +1,9 @@
 from django.urls import path
-from .views import CompanyAPIView, LoginAPIView, SchoolDashboardSummaryAPIView, SignupAPIView, StaffAPIView, StudentClassView, TeacherAPIView, TransactionAPIView, StudentAPIView
+from .views import (
+    CompanyAPIView, LoginAPIView, SchoolDashboardSummaryAPIView, SignupAPIView, StaffAPIView,
+    StudentClassView, TeacherAPIView, TransactionAPIView, StudentAPIView, NotificationAPIView, FeeReminderNotificationAPIView
+    ParentPortalAPIView, NotificationAPIView, FeeReminderNotificationAPIView, ParentAPIView
+)
 from .fees import FeeStructureAPIView, FeePaymentAPIView, FeeDiscountAPIView, FeeReportingAPIView
 from .documents import DocumentTemplateAPIView, DocumentTemplateDetailAPIView, TemplateCategoriesAPIView, GenerateDocumentAPIView
 
@@ -30,4 +34,9 @@ urlpatterns = [
     path("templates/<int:template_id>/", DocumentTemplateDetailAPIView.as_view(), name="template-detail"),
     path("template-categories/", TemplateCategoriesAPIView.as_view(), name="template-categories"),
     path("generate-document/", GenerateDocumentAPIView.as_view(), name="generate-document"),
+
+
+    path("notifications/", NotificationAPIView.as_view(), name="notifications"),
+    path("notifications/send/", NotificationAPIView.as_view(), name="send-notifications"),
+    path("notifications/fee-reminders/", FeeReminderNotificationAPIView.as_view(), name="fee-reminders"),
 ]

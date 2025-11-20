@@ -656,3 +656,69 @@ class DocumentTemplate(models.Model):
         if not self.variables_used:
             self.variables_used = self.get_variables()
         super().save(*args, **kwargs)
+
+
+# Notification Model
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('sms', 'SMS'),
+        ('email', 'Email'),
+        ('push', 'Push Notification'),
+    )
+
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+        ('delivered', 'Delivered'),
+    )
+
+    PRIORITY_CHOICES = (
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    )
+
+    company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
+
+    # Basic Information
+    notification_type = models.CharField(max_length=10, choices=NOTIFICATION_TYPES, default='sms')
+    subject = models.CharField(max_length=255, help_text="Subject for email or summary for SMS")
+    message = models.TextField()
+
+    # Recipients - Use student parent information
+    recipient_email = models.EmailField(blank=True, null=True)
+    recipient_phone = models.CharField(max_length=20, blank=True, null=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, blank=True, null=True, help_text="Student for parent notifications")
+
+    # Status and Priority
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
+
+    # Timestamps
+    scheduled_at = models.DateTimeField(blank=True, null=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
+
+    # Metadata
+    sent_by = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True)
+    error_message = models.TextField(blank=True, null=True)
+    reference_number = models.CharField(max_length=100, blank=True, null=True, unique=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
+        db_table = 'notifications'
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.reference_number:
+            import uuid
+            self.reference_number = str(uuid.uuid4())[:8].upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.notification_type.upper()} to {self.parent or self.recipient_phone or self.recipient_email} - {self.status}"
