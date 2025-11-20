@@ -1220,25 +1220,6 @@ class TransactionAPIView(APIView):
             return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
 
 
-# -------------------- Parent Portal Views (Simplified for Mobile Apps) --------------------
-class ParentLoginAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        phone = request.data.get("phone")
-        password = request.data.get("password")
-
-        if not phone or not password:
-            return Response({"message": "Phone and password are required"}, status=400)
-
-        # For mobile apps, parents would authenticate based on their child requests
-        # This is a placeholder - actual authentication would be handled by mobile app
-        return Response({
-            "message": "Mobile app authentication handled separately",
-            "note": "Parent contact information comes from student records"
-        })
-
-
 # -------------------- Notification Views --------------------
 from .tasks import send_bulk_notifications, send_fee_reminder_notifications
 

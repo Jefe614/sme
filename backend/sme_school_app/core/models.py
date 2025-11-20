@@ -1,6 +1,7 @@
-from django.utils import timezone 
+from django.utils import timezone
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import make_password, check_password
 
 
 # SME Models
@@ -55,6 +56,7 @@ class Student(models.Model):
     parent_name = models.CharField(max_length=100 , blank=True, default='')
     relationship = models.CharField(max_length=10, choices=RELATIONSHIP_CHOICES, blank=True, default='')
     parent_phone = models.CharField(max_length=20, blank=True, default='')
+    parent_password = models.CharField(max_length=128, blank=True, default='', help_text="Hashed password for parent mobile login")
     
     profile_image = models.ImageField(upload_to='student_profiles/', blank=True, null=True)
     nationality = models.CharField(max_length=100, blank=True, default='')
