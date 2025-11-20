@@ -27,6 +27,7 @@ import { getFeeReports, getFeeStructures, getFeePayments } from '../../api/auth'
 const { Title } = Typography;
 const { TabPane } = Tabs;
 
+
 export default function FeeManagement() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -69,13 +70,13 @@ export default function FeeManagement() {
   const quickStats = feeReports?.summary || {};
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <Title level={2} className="!mb-1 !text-2xl sm:!text-3xl text-gray-900 dark:text-gray-100">
+          <Title level={2} className="!mb-1 !text-2xl sm:!text-3xl text-gray-900">
             Fee Management
           </Title>
-          <p className="text-gray-600 dark:text-gray-400">Comprehensive fee structure and payment management system</p>
+          <p className="text-gray-600">Comprehensive fee structure and payment management system</p>
         </div>
       </div>
 
@@ -85,12 +86,12 @@ export default function FeeManagement() {
           <Col xs={24} sm={12} lg={6}>
             <Card
               hoverable
-              className="text-center cursor-pointer bg-white dark:bg-gray-800"
+              className="text-center cursor-pointer bg-white"
               onClick={() => navigate('/school-dashboard/fees/structures')}
             >
-              <DollarOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '12px' }} />
-              <Title level={4} className="!mb-1 text-gray-900 dark:text-gray-100">Fee Structures</Title>
-              <p className="text-gray-600 dark:text-gray-400">Create and manage fee categories</p>
+              <DollarOutlined style={{ fontSize: '32px', color: '#4169E1', marginBottom: '12px' }} />
+              <Title level={4} className="!mb-1 text-gray-900">Fee Structures</Title>
+              <p className="text-gray-600">Create and manage fee categories</p>
               <Button type="link" icon={<EyeOutlined />}>View Structures</Button>
             </Card>
           </Col>
@@ -98,12 +99,12 @@ export default function FeeManagement() {
           <Col xs={24} sm={12} lg={6}>
             <Card
               hoverable
-              className="text-center cursor-pointer bg-white dark:bg-gray-800"
+              className="text-center cursor-pointer bg-white"
               onClick={() => navigate('/school-dashboard/fees/payments')}
             >
-              <FileTextOutlined style={{ fontSize: '32px', color: '#52c41a', marginBottom: '12px' }} />
-              <Title level={4} className="!mb-1 text-gray-900 dark:text-gray-100">Record Payments</Title>
-              <p className="text-gray-600 dark:text-gray-400">Process student fee payments</p>
+              <FileTextOutlined style={{ fontSize: '32px', color: '#2ecc71', marginBottom: '12px' }} />
+              <Title level={4} className="!mb-1 text-gray-900">Record Payments</Title>
+              <p className="text-gray-600">Process student fee payments</p>
               <Button type="link" icon={<PlusOutlined />}>Record Payment</Button>
             </Card>
           </Col>
@@ -111,12 +112,12 @@ export default function FeeManagement() {
           <Col xs={24} sm={12} lg={6}>
             <Card
               hoverable
-              className="text-center cursor-pointer bg-white dark:bg-gray-800"
+              className="text-center cursor-pointer bg-white"
               onClick={() => navigate('/school-dashboard/fees/discounts')}
             >
-              <UserOutlined style={{ fontSize: '32px', color: '#faad14', marginBottom: '12px' }} />
-              <Title level={4} className="!mb-1 text-gray-900 dark:text-gray-100">Fee Discounts</Title>
-              <p className="text-gray-600 dark:text-gray-400">Manage bursaries and discounts</p>
+              <UserOutlined style={{ fontSize: '32px', color: '#2ecc71', marginBottom: '12px' }} />
+              <Title level={4} className="!mb-1 text-gray-900">Fee Discounts</Title>
+              <p className="text-gray-600">Manage bursaries and discounts</p>
               <Button type="link" icon={<SettingOutlined />}>Manage Discounts</Button>
             </Card>
           </Col>
@@ -124,12 +125,12 @@ export default function FeeManagement() {
           <Col xs={24} sm={12} lg={6}>
             <Card
               hoverable
-              className="text-center cursor-pointer bg-white dark:bg-gray-800"
+              className="text-center cursor-pointer bg-white"
               onClick={() => navigate('/school-dashboard/fees/reports')}
             >
-              <BarChartOutlined style={{ fontSize: '32px', color: '#722ed1', marginBottom: '12px' }} />
-              <Title level={4} className="!mb-1 text-gray-900 dark:text-gray-100">Fee Reports</Title>
-              <p className="text-gray-600 dark:text-gray-400">View payment histories and analytics</p>
+              <BarChartOutlined style={{ fontSize: '32px', color: '#4169E1', marginBottom: '12px' }} />
+              <Title level={4} className="!mb-1 text-gray-900">Fee Reports</Title>
+              <p className="text-gray-600">View payment histories and analytics</p>
               <Button type="link" icon={<BarChartOutlined />}>View Reports</Button>
             </Card>
           </Col>
@@ -143,7 +144,7 @@ export default function FeeManagement() {
                 title="Total Collected"
                 value={quickStats.total_collected || 0}
                 precision={0}
-                valueStyle={{ color: '#3f8600' }}
+                valueStyle={{ color: '#2ecc71' }}
                 prefix="KES"
                 suffix=""
               />
@@ -155,7 +156,7 @@ export default function FeeManagement() {
               <Statistic
                 title="Total Payments"
                 value={quickStats.total_payments || 0}
-                valueStyle={{ color: '#1890ff' }}
+                valueStyle={{ color: '#4169E1' }}
               />
             </Card>
           </Col>
@@ -177,7 +178,7 @@ export default function FeeManagement() {
               <Statistic
                 title="Active Fee Structures"
                 value={recentStructures.filter(s => s.is_active).length}
-                valueStyle={{ color: '#722ed1' }}
+                valueStyle={{ color: '#4169E1' }}
               />
             </Card>
           </Col>
@@ -190,12 +191,12 @@ export default function FeeManagement() {
               <div className="space-y-3">
                 {recentStructures.length > 0 ? (
                   recentStructures.map((structure) => (
-                    <Card key={structure.id} size="small" className="hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
+                    <Card key={structure.id} size="small" className="hover:shadow-md transition-shadow bg-white">
                       <Row align="middle" justify="space-between">
                         <Col>
                           <Space direction="vertical" size={2}>
-                            <div className="font-medium text-gray-900 dark:text-gray-100">{structure.name}</div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <div className="font-medium text-gray-900">{structure.name}</div>
+                            <div className="text-sm text-gray-600">
                               {structure.fee_type} - {structure.academic_year} {structure.term}
                             </div>
                           </Space>
@@ -203,10 +204,10 @@ export default function FeeManagement() {
                         <Col>
                           <Space>
                             <div className="text-right">
-                              <div className="font-bold text-green-600 dark:text-green-400">
+                              <div className="font-bold text-primary">
                                 KES {structure.amount?.toLocaleString() || '0'}
                               </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                              <div className="text-xs text-gray-500 capitalize">
                                 {structure.fee_type.replace('_', ' ')}
                               </div>
                             </div>
@@ -216,7 +217,7 @@ export default function FeeManagement() {
                     </Card>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <div className="text-center py-8 text-gray-500">
                     No fee structures found. <Button type="link" onClick={() => navigate('/school-dashboard/fees/structures')}>Create your first fee structure</Button>
                   </div>
                 )}
@@ -234,22 +235,22 @@ export default function FeeManagement() {
               <div className="space-y-3">
                 {recentPayments.length > 0 ? (
                   recentPayments.map((payment) => (
-                    <Card key={payment.id} size="small" className="hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
+                    <Card key={payment.id} size="small" className="hover:shadow-md transition-shadow bg-white">
                       <Row align="middle" justify="space-between">
                         <Col>
                           <Space direction="vertical" size={2}>
-                            <div className="font-medium text-gray-900 dark:text-gray-100">{payment.student_name}</div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <div className="font-medium text-gray-900">{payment.student_name}</div>
+                            <div className="text-sm text-gray-600">
                               Receipt: {payment.receipt_number} • {payment.payment_date}
                             </div>
                           </Space>
                         </Col>
                         <Col>
                           <Space direction="vertical" align="end" size={2}>
-                            <div className="font-bold text-green-600 dark:text-green-400">
+                            <div className="font-bold text-primary">
                               KES {payment.amount_paid?.toLocaleString() || '0'}
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                            <div className="text-xs text-gray-500 capitalize">
                               {payment.payment_method.replace('_', ' ')}
                             </div>
                           </Space>
@@ -258,7 +259,7 @@ export default function FeeManagement() {
                     </Card>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <div className="text-center py-8 text-gray-500">
                     No payment records found. <Button type="link" onClick={() => navigate('/school-dashboard/fees/payments')}>Record a payment</Button>
                   </div>
                 )}

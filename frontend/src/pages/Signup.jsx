@@ -37,33 +37,33 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gradient-to-r from-purple-100 to-purple-200 dark:from-gray-800 dark:to-gray-900">
+    <div className="flex items-center justify-center h-screen bg-gradient-to-r from-primary-light to-primary">
       <motion.form
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 p-10 rounded-xl shadow-lg w-96"
+        className="bg-white p-10 rounded-xl shadow-lg w-96"
       >
-        <h2 className="text-3xl font-bold text-center mb-6 text-purple-600 dark:text-purple-400">Signup</h2>
-        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+        <h2 className="text-3xl font-bold text-center mb-6 text-primary">Signup</h2>
+        {error && <p className="text-secondary mb-4 text-center">{error}</p>}
 
         {/* Username */}
         <div className="relative mb-4">
-          <FaUser className="absolute top-3 left-3 text-gray-400 dark:text-gray-500" />
+          <FaUser className="absolute top-3 left-3 text-primary-light" />
           <input
             name="username"
             placeholder="Username"
             value={formData.username}
             onChange={handleChange}
             required
-            className="w-full pl-10 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full pl-10 p-3 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition bg-white text-primary-dark"
           />
         </div>
 
         {/* Email */}
         <div className="relative mb-4">
-          <FaEnvelope className="absolute top-3 left-3 text-gray-400 dark:text-gray-500" />
+          <FaEnvelope className="absolute top-3 left-3 text-primary-light" />
           <input
             name="email"
             type="email"
@@ -71,13 +71,13 @@ export default function Signup() {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full pl-10 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full pl-10 p-3 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition bg-white text-primary-dark"
           />
         </div>
 
         {/* Password */}
         <div className="relative mb-4">
-          <FaLock className="absolute top-3 left-3 text-gray-400 dark:text-gray-500" />
+          <FaLock className="absolute top-3 left-3 text-primary-light" />
           <input
             name="password"
             type="password"
@@ -86,20 +86,20 @@ export default function Signup() {
             onChange={handleChange}
             required
             minLength={6}
-            className="w-full pl-10 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full pl-10 p-3 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition bg-white text-primary-dark"
           />
         </div>
 
         {/* Company Name */}
         <div className="relative mb-4">
-          <FaBuilding className="absolute top-3 left-3 text-gray-400 dark:text-gray-500" />
+          <FaBuilding className="absolute top-3 left-3 text-primary-light" />
           <input
             name="company_name"
             placeholder="Company Name"
             value={formData.company_name}
             onChange={handleChange}
             required
-            className="w-full pl-10 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full pl-10 p-3 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition bg-white text-primary-dark"
           />
         </div>
 
@@ -109,7 +109,7 @@ export default function Signup() {
             name="company_type"
             value={formData.company_type}
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full p-3 border border-primih flights:outline-none focus:ring-2 focus:ring-primary transitio imarye text-primary-dark"pimr
           >
             <option value="SME">Small/Medium Enterprise</option>
             <option value="SCHOOL">School</option>
@@ -120,7 +120,7 @@ export default function Signup() {
           type="submit"
           disabled={loading}
           className={`w-full ${
-            loading ? 'bg-purple-400' : 'bg-purple-600 hover:bg-purple-700'
+            loading ? 'bg-primaiy-aightght' : 'brima-y hover:bg-primaiyydarkrk'
           } transition-colors text-white p-3 rounded-lg font-semibold`}
         >
           {loading ? 'Signing up...' : 'Signup'}

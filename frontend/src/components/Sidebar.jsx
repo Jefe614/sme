@@ -1,27 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Layout, Menu, Avatar, Typography, Badge, Drawer, Button } from 'antd';
+import { Layout, Avatar, Typography, Badge, Drawer, Button } from 'antd';
 import { 
-  HomeOutlined,
-  DollarOutlined,
-  TeamOutlined,
-  SolutionOutlined,
-  MoneyCollectOutlined,
-  CarOutlined,
-  CalendarOutlined,
-  UserOutlined,
-  BarChartOutlined,
-  FileTextOutlined,
-  BellOutlined,
-  SettingOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  BookOutlined,
-  UsergroupAddOutlined
+  HomeOutlined, DollarOutlined, TeamOutlined, SolutionOutlined, 
+  MoneyCollectOutlined, CarOutlined, CalendarOutlined, UserOutlined, 
+  BarChartOutlined, FileTextOutlined, BellOutlined, SettingOutlined, 
+  MenuFoldOutlined, MenuUnfoldOutlined, BookOutlined, UsergroupAddOutlined 
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
 const { Text } = Typography;
+
+// Colors
+const PRIMARY_COLOR = '#0F172A'; // Dark navy
+const SECONDARY_COLOR = '#3B82F6'; // Blue highlight
+const HOVER_COLOR = '#EF4444'; // Red hover
+const SELECTED_COLOR = '#60A5FA'; // Light blue selected
+const BADGE_COLOR = '#DC2626'; // Red badge
+const TEXT_COLOR = '#F8FAFC'; // Light text
 
 export default function Sidebar({ userType, onCollapse }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -29,193 +25,126 @@ export default function Sidebar({ userType, onCollapse }) {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
 
-  // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth <= 768) {
-        setCollapsed(true);
-      }
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) setCollapsed(true);
     };
-
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const smeMenuItems = [
-    {
-      key: '/sme-dashboard',
-      icon: <HomeOutlined />,
-      label: 'Dashboard',
-      path: '/sme-dashboard'
-    },
-    {
-      key: '/sme-dashboard/cashflow',
-      icon: <DollarOutlined />,
-      label: 'Cash Flow',
-      path: '/sme-dashboard/cashflow'
-    },
-    {
-      key: '/sme-dashboard/analytics',
-      icon: <BarChartOutlined />,
-      label: 'Analytics',
-      path: '/sme-dashboard/analytics'
-    },
-    {
-      key: '/sme-dashboard/reports',
-      icon: <FileTextOutlined />,
-      label: 'Reports',
-      path: '/sme-dashboard/reports'
-    },
-    {
-      key: '/sme-dashboard/settings',
-      icon: <SettingOutlined />,
-      label: 'Settings',
-      path: '/sme-dashboard/settings'
-    }
+    { key: '/sme-dashboard', icon: <HomeOutlined />, label: 'Dashboard', path: '/sme-dashboard' },
+    { key: '/sme-dashboard/cashflow', icon: <DollarOutlined />, label: 'Cash Flow', path: '/sme-dashboard/cashflow' },
+    { key: '/sme-dashboard/analytics', icon: <BarChartOutlined />, label: 'Analytics', path: '/sme-dashboard/analytics' },
+    { key: '/sme-dashboard/reports', icon: <FileTextOutlined />, label: 'Reports', path: '/sme-dashboard/reports' },
+    { key: '/sme-dashboard/settings', icon: <SettingOutlined />, label: 'Settings', path: '/sme-dashboard/settings' },
   ];
 
   const schoolMenuItems = [
-    {
-      key: '/school-dashboard',
-      icon: <HomeOutlined />,
-      label: 'Dashboard',
-      path: '/school-dashboard'
-    },
-    {
-      key: '/school-dashboard/students',
-      icon: <TeamOutlined />,
-      label: (
-        <div className="flex items-center justify-between w-full">
-          <span>Students</span>
-          <Badge count={450} size="small" />
-        </div>
-      ),
-      path: '/school-dashboard/students'
-    },
-    {
-      key: '/school-dashboard/teachers',
-      icon: <SolutionOutlined />,
-      label: 'Teachers',
-      path: '/school-dashboard/teachers'
-    },
-    {
-      key: '/school-dashboard/classrooms',
-      icon: <BookOutlined />,
-      label: 'Classes',
-      path: '/school-dashboard/classrooms'
-    },
-    {
-      key: '/school-dashboard/fees',
-      icon: <MoneyCollectOutlined />,
-      label: (
-        <div className="flex items-center justify-between w-full">
-          <span>Fee Management</span>
-          <Badge count={23} size="small" />
-        </div>
-      ),
-      path: '/school-dashboard/fees'
-    },
-    {
-      key: '/school-dashboard/transport',
-      icon: <CarOutlined />,
-      label: 'Transport',
-      path: '/school-dashboard/transport'
-    },
-    {
-      key: '/school-dashboard/calendar',
-      icon: <CalendarOutlined />,
-      label: 'Academic Calendar',
-      path: '/school-dashboard/calendar'
-    },
-    {
-      key: '/school-dashboard/staff',
-      icon: <UsergroupAddOutlined />,
-      label: 'Staff Management',
-      path: '/school-dashboard/staff'
-    },
-    {
-      key: '/school-dashboard/templates',
-      icon: <FileTextOutlined />,
-      label: 'Document Templates',
-      path: '/school-dashboard/templates'
-    },
-    {
-      key: '/school-dashboard/analytics',
-      icon: <BarChartOutlined />,
-      label: 'Analytics',
-      path: '/school-dashboard/analytics'
-    },
-    {
-      key: '/school-dashboard/reports',
-      icon: <FileTextOutlined />,
-      label: 'Reports',
-      path: '/school-dashboard/reports'
-    },
-    {
-      key: '/school-dashboard/notifications',
-      icon: <BellOutlined />,
-      label: (
-        <div className="flex items-center justify-between w-full">
-          <span>Notifications</span>
-          <Badge count={5} size="small" />
-        </div>
-      ),
-      path: '/school-dashboard/notifications'
-    },
-    {
-      key: '/school-dashboard/settings',
-      icon: <SettingOutlined />,
-      label: 'Settings',
-      path: '/school-dashboard/settings'
-    }
+    { key: '/school-dashboard', icon: <HomeOutlined />, label: 'Dashboard', path: '/school-dashboard' },
+    { key: '/school-dashboard/students', icon: <TeamOutlined />, label: 'Students', path: '/school-dashboard/students' },
+    { key: '/school-dashboard/teachers', icon: <SolutionOutlined />, label: 'Teachers', path: '/school-dashboard/teachers' },
+    { key: '/school-dashboard/classrooms', icon: <BookOutlined />, label: 'Classes', path: '/school-dashboard/classrooms' },
+    { key: '/school-dashboard/fees', icon: <MoneyCollectOutlined />, label: 'Fee Management', path: '/school-dashboard/fees' },
+    { key: '/school-dashboard/transport', icon: <CarOutlined />, label: 'Transport', path: '/school-dashboard/transport' },
+    { key: '/school-dashboard/calendar', icon: <CalendarOutlined />, label: 'Academic Calendar', path: '/school-dashboard/calendar' },
+    { key: '/school-dashboard/staff', icon: <UsergroupAddOutlined />, label: 'Staff Management', path: '/school-dashboard/staff' },
+    { key: '/school-dashboard/templates', icon: <FileTextOutlined />, label: 'Document Templates', path: '/school-dashboard/templates' },
+    { key: '/school-dashboard/analytics', icon: <BarChartOutlined />, label: 'Analytics', path: '/school-dashboard/analytics' },
+    { key: '/school-dashboard/reports', icon: <FileTextOutlined />, label: 'Reports', path: '/school-dashboard/reports' },
+    { key: '/school-dashboard/notifications', icon: <BellOutlined />, label: 'Notifications', path: '/school-dashboard/notifications' },
+    { key: '/school-dashboard/settings', icon: <SettingOutlined />, label: 'Settings', path: '/school-dashboard/settings' },
   ];
 
   const menuItems = userType === 'SME' ? smeMenuItems : schoolMenuItems;
   const selectedKeys = [location.pathname];
 
   const handleMenuClick = ({ key }) => {
-    if (isMobile) {
-      setMobileVisible(false);
-    }
+    if (isMobile) setMobileVisible(false);
   };
 
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
-    if (onCollapse) {
-      onCollapse(!collapsed);
-    }
+    if (onCollapse) onCollapse(!collapsed);
   };
 
-  const showMobileDrawer = () => {
-    setMobileVisible(true);
-  };
+  const showMobileDrawer = () => setMobileVisible(true);
+  const hideMobileDrawer = () => setMobileVisible(false);
 
-  const hideMobileDrawer = () => {
-    setMobileVisible(false);
-  };
+  const renderMenuItems = () =>
+    menuItems.map((item) => (
+      <NavLink
+        key={item.key}
+        to={item.path}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '12px 16px',
+          margin: '6px 0',
+          borderRadius: '8px',
+          color: selectedKeys.includes(item.key) ? SELECTED_COLOR : TEXT_COLOR,
+          backgroundColor: selectedKeys.includes(item.key) ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          textDecoration: 'none',
+          borderLeft: selectedKeys.includes(item.key) ? `3px solid ${SELECTED_COLOR}` : '3px solid transparent',
+          fontSize: collapsed ? '0' : '14px',
+          width: collapsed ? '100%' : 'auto'
+        }}
+        onMouseEnter={(e) => {
+          if (!selectedKeys.includes(item.key)) {
+            e.currentTarget.style.color = HOVER_COLOR;
+            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            e.currentTarget.style.transform = 'translateX(4px)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!selectedKeys.includes(item.key)) {
+            e.currentTarget.style.color = TEXT_COLOR;
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.transform = 'translateX(0)';
+          }
+        }}
+        onClick={handleMenuClick}
+      >
+        <span style={{ fontSize: '18px', minWidth: '20px', display: 'flex', alignItems: 'center' }}>
+          {item.icon}
+        </span>
+        {!collapsed && <span>{item.label}</span>}
+      </NavLink>
+    ));
 
   const siderContent = (
-    <div className="h-full flex flex-col">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <div className="flex items-center space-x-3">
-          <Avatar
-            size="large"
-            style={{
-              backgroundColor: userType === 'SME' ? '#1677ff' : '#722ed1',
-              fontSize: '18px'
-            }}
-            icon={userType === 'SME' ? <BookOutlined /> : <TeamOutlined />}
-          />
+      <div style={{ padding: '24px 16px 20px 16px', borderBottom: `1px solid rgba(96, 165, 250, 0.2)` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: collapsed ? 'center' : 'flex-start' }}>
+          <div style={{
+            width: 40,
+            height: 40,
+            borderRadius: '8px',
+            background: `linear-gradient(135deg, ${SECONDARY_COLOR}, ${HOVER_COLOR})`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: TEXT_COLOR,
+            fontSize: '20px',
+            fontWeight: 'bold',
+            boxShadow: `0 4px 12px rgba(239, 68, 68, 0.3)`
+          }}>
+            {userType === 'SME' ? 'S' : 'E'}
+          </div>
           {!collapsed && (
-            <div>
-              <Text strong className="text-base text-gray-900 dark:text-gray-100">
-                {userType === 'SME' ? 'SME Portal' : 'School Portal'}
+            <div style={{ overflow: 'hidden' }}>
+              <Text style={{ color: TEXT_COLOR, fontWeight: '600', fontSize: '14px', display: 'block' }}>
+                {userType === 'SME' ? 'SME' : 'School'} Portal
               </Text>
-              <br />
-              <Text type="secondary" className="text-xs dark:text-gray-400">
+              <Text style={{ color: SECONDARY_COLOR, fontSize: '12px', display: 'block' }}>
                 Management System
               </Text>
             </div>
@@ -224,42 +153,35 @@ export default function Sidebar({ userType, onCollapse }) {
       </div>
 
       {/* Menu */}
-      <div className="flex-1 overflow-auto">
-        <Menu
-          mode="inline"
-          selectedKeys={selectedKeys}
-          style={{ border: 'none' }}
-          onClick={handleMenuClick}
-          inlineCollapsed={collapsed}
-          theme="dark"
-        >
-          {menuItems.map((item) => (
-            <Menu.Item key={item.key} icon={item.icon}>
-              <NavLink to={item.path} className="text-decoration-none">
-                {item.label}
-              </NavLink>
-            </Menu.Item>
-          ))}
-        </Menu>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px' }}>
+        {renderMenuItems()}
       </div>
 
       {/* User Profile */}
       {!collapsed && (
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
-          <div className="flex items-center space-x-3">
-            <Avatar
-              size="default"
-              style={{ backgroundColor: '#87d068' }}
-              icon={<UserOutlined />}
-            />
-            <div className="flex-1 min-w-0">
-              <Text strong className="text-sm block truncate text-gray-900 dark:text-gray-100">
-                Administrator
-              </Text>
-              <Text type="secondary" className="text-xs block truncate dark:text-gray-400">
-                admin@school.com
-              </Text>
-            </div>
+        <div style={{
+          padding: '16px',
+          borderTop: `1px solid rgba(96, 165, 250, 0.2)`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <Badge
+            count={3}
+            style={{
+              backgroundColor: BADGE_COLOR,
+              boxShadow: `0 0 0 1px ${PRIMARY_COLOR}`
+            }}
+          >
+            <Avatar style={{ backgroundColor: SECONDARY_COLOR }} icon={<UserOutlined />} />
+          </Badge>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ color: TEXT_COLOR, fontWeight: '600', fontSize: '14px', display: 'block' }}>
+              Administrator
+            </Text>
+            <Text style={{ color: 'rgba(248, 250, 252, 0.7)', fontSize: '12px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              admin@school.com
+            </Text>
           </div>
         </div>
       )}
@@ -268,13 +190,22 @@ export default function Sidebar({ userType, onCollapse }) {
 
   return (
     <>
-      {/* Mobile Menu Button */}
+      {/* Mobile Hamburger */}
       {isMobile && (
         <Button
           type="text"
           icon={<MenuUnfoldOutlined />}
           onClick={showMobileDrawer}
-          className="fixed top-4 left-4 z-50 bg-white shadow-md"
+          style={{
+            position: 'fixed',
+            top: 16,
+            left: 16,
+            zIndex: 50,
+            backgroundColor: PRIMARY_COLOR,
+            color: TEXT_COLOR,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            border: 'none'
+          }}
           size="large"
         />
       )}
@@ -282,44 +213,77 @@ export default function Sidebar({ userType, onCollapse }) {
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sider
-          theme="light"
+          trigger={null}
           collapsible
           collapsed={collapsed}
-          onCollapse={toggleCollapse}
-          trigger={
-            <div className="flex items-center justify-center h-12 border-t border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800">
-              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            </div>
-          }
           width={280}
           collapsedWidth={80}
-          className="shadow-lg border-r border-gray-200 dark:border-gray-700"
           style={{
             position: 'fixed',
             left: 0,
             top: 0,
             bottom: 0,
             zIndex: 100,
-            backgroundColor: 'transparent'
+            backgroundColor: PRIMARY_COLOR,
+            boxShadow: '4px 0 16px rgba(0, 0, 0, 0.4)'
           }}
         >
-          {siderContent}
+          <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'space-between', 
+              height: '100%' 
+          }}>
+            {siderContent}
+
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={toggleCollapse}
+              style={{
+                width: '100%',
+                color: SECONDARY_COLOR,
+                border: 'none',
+                borderTop: `1px solid rgba(96, 165, 250, 0.2)`,
+                borderRadius: 0,
+                padding: '12px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = HOVER_COLOR;
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = SECONDARY_COLOR;
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            />
+          </div>
         </Sider>
+
       )}
 
       {/* Mobile Drawer */}
       {isMobile && (
         <Drawer
-          title={null}
           placement="left"
           onClose={hideMobileDrawer}
           open={mobileVisible}
-          width={280}
-          bodyStyle={{ padding: 0 }}
-          headerStyle={{ display: 'none' }}
-          className="mobile-sidebar"
+          bodyStyle={{
+            padding: 0,
+            backgroundColor: PRIMARY_COLOR,
+            height: '100vh',
+            overflowY: 'auto',
+          }}
+          headerStyle={{
+            backgroundColor: PRIMARY_COLOR,
+            borderBottom: `1px solid rgba(96, 165, 250, 0.2)`
+          }}
+          title={<span style={{ color: TEXT_COLOR }}>{userType === 'SME' ? 'SME' : 'School'} Portal</span>}
         >
-          {siderContent}
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+            {siderContent}
+          </div>
         </Drawer>
       )}
     </>

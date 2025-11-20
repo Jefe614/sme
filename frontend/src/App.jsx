@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
+// import { ThemeProvider } from './context/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
 import DashboardSidebarLayout from './components/DashboardSidebarLayout';
 import Login from './pages/Login';
@@ -21,7 +21,7 @@ import TemplateManagement from './pages/documents/TemplateManagement';
 
 function App() {
   return (
-    <ThemeProvider>
+    // <ThemeProvider>
       <AuthProvider>
         <Router>
           <Routes>
@@ -80,7 +80,7 @@ function App() {
           </Routes>
         </Router>
       </AuthProvider>
-    </ThemeProvider>
+    // </ThemeProvider>
   );
 }
 

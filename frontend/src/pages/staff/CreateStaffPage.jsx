@@ -15,9 +15,9 @@ import {
   Upload,
 } from "antd";
 import { UploadOutlined, SaveOutlined } from "@ant-design/icons";
-import Swal from "sweetalert2";
 import { createStaff, getClasses, getSubjects } from "../../api/auth";
 import { getGradeLabel } from "../../utils/gradeLevels";
+import { showNotification, handleApiError } from "../../utils/notifications";
 import moment from "moment";
 
 const { Title, Text } = Typography;
@@ -120,14 +120,7 @@ export default function CreateStaffPage() {
       setClasses(data);
     } catch (error) {
       console.error("Error fetching classes:", error);
-      Swal.fire({
-        title: "Error",
-        text: "Failed to load classes",
-        icon: "error",
-        confirmButtonText: "OK",
-        width: "600px",
-        customClass: { popup: "large-success-modal" },
-      });
+      handleApiError(error, "Failed to load classes");
     }
   };
 
@@ -137,14 +130,7 @@ export default function CreateStaffPage() {
       setSubjects(data);
     } catch (error) {
       console.error("Error fetching subjects:", error);
-      Swal.fire({
-        title: "Error",
-        text: "Failed to load subjects",
-        icon: "error",
-        confirmButtonText: "OK",
-        width: "600px",
-        customClass: { popup: "large-success-modal" },
-      });
+      handleApiError(error, "Failed to load subjects");
     }
   };
 
@@ -152,7 +138,7 @@ export default function CreateStaffPage() {
     setLoading(true);
     try {
       const formData = new FormData();
-      
+
       // Append all fields to FormData
       Object.keys(values).forEach((key) => {
         if (key === "profile_image" && values[key]?.file) {
@@ -192,28 +178,11 @@ export default function CreateStaffPage() {
 
       const response = await createStaff(formData);
       console.log("API Response:", response);
-      await Swal.fire({
-        title: "Success!",
-        text: "Staff created successfully!",
-        icon: "success",
-        confirmButtonText: "OK",
-        width: "600px",
-        timer: 2000,
-        timerProgressBar: true,
-        customClass: { popup: "large-success-modal" },
-      });
+      showNotification.success("Success", "Staff created successfully!");
       navigate(isTeacherRoute ? "/school-dashboard/teachers" : "/school-dashboard/staff");
     } catch (error) {
       console.error("Error creating staff:", error);
-      const errorMsg = error.response?.data?.error || "Failed to create staff";
-      Swal.fire({
-        title: "Error",
-        text: errorMsg,
-        icon: "error",
-        confirmButtonText: "OK",
-        width: "600px",
-        customClass: { popup: "large-success-modal" },
-      });
+      handleApiError(error, "Failed to create staff");
     } finally {
       setLoading(false);
     }
@@ -465,6 +434,37 @@ export default function CreateStaffPage() {
                       </Option>
                     ))}
                   </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item name="specialization" label="Specialization">
+                  <Input size="large" placeholder="e.g., Mathematics Education" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item name="subjects" label="Subjects Taught">
+                  <Select mode="multiple" size="large" placeholder="Select subjects">
+                    {subjects.map((subject) => (
+                      <Option key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item name="classes_taught" label="Classes Taught">
+                  <Select mode="multiple" size="large" placeholder="Select classes">
+                    {classes.map((cls) => (
+                      <Option key={cls.id} value={cls.id}>
+                        {`${getGradeLabel(cls.grade_level)} - Section ${cls.section}`}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item name="is_class_teacher" label="Is Class Teacher" valuePropName="checked">
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12}>

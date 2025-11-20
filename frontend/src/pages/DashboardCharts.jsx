@@ -32,24 +32,24 @@ const { Text, Title } = Typography;
 
 export default function DashboardCharts({ dashboardData, quickActions, recentActivities, stats }) {
 
-  // Chart configurations
+  // Chart configurations with new color theme
   const feeTrendChart = {
     labels: dashboardData.feeTrend.labels || [],
     datasets: [
       {
         label: 'Fees Collected (KSh)',
         data: dashboardData.feeTrend.data || [],
-        backgroundColor: 'rgba(147, 51, 234, 0.2)', // Purple with opacity for fill
-        borderColor: '#8b5cf6', // Bright purple
+        backgroundColor: 'rgba(65, 105, 225, 0.2)', // Primary with opacity for fill
+        borderColor: '#4169E1', // Primary
         borderWidth: 3,
         fill: true,
         tension: 0.4,
         pointRadius: 5,
         pointBackgroundColor: '#ffffff',
-        pointBorderColor: '#8b5cf6',
+        pointBorderColor: '#4169E1',
         pointBorderWidth: 2,
         pointHoverRadius: 8,
-        pointHoverBackgroundColor: '#8b5cf6',
+        pointHoverBackgroundColor: '#4169E1',
       },
     ],
   };
@@ -60,11 +60,11 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
       {
         label: 'Students per Class',
         data: dashboardData.classDistribution.data || [],
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(46, 204, 113, 0.8)', // Secondary
+        borderColor: 'rgb(46, 204, 113)',
         borderWidth: 2,
         borderRadius: 8,
-        hoverBackgroundColor: 'rgba(59, 130, 246, 1)',
+        hoverBackgroundColor: 'rgba(46, 204, 113, 1)',
       },
     ],
   };
@@ -74,7 +74,7 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
     datasets: [
       {
         data: dashboardData.genderDistribution.data || [0, 0, 0],
-        backgroundColor: ['#3b82f6', '#ec4899', '#a855f7'],
+        backgroundColor: ['#4169E1', '#2ecc71', '#6ee7b7'],
         borderWidth: 4,
         borderColor: '#fff',
         hoverOffset: 10,
@@ -88,13 +88,13 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
       {
         data: dashboardData.feeBreakdown.data || [],
         backgroundColor: [
-          '#3b82f6',
-          '#10b981',
-          '#f59e0b',
-          '#ef4444',
-          '#8b5cf6',
-          '#06b6d4',
-          '#ec4899'
+          '#4169E1',
+          '#2ecc71',
+          '#6ee7b7',
+          '#3154B0',
+          '#25a25a',
+          '#6A8CFF',
+          '#3b82f6'
         ],
         borderWidth: 4,
         borderColor: '#fff',
@@ -109,7 +109,7 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(31, 41, 55, 0.95)',
+        backgroundColor: 'rgba(75, 85, 99, 0.95)',
         padding: 12,
         titleColor: '#ffffff',
         bodyColor: '#ffffff',
@@ -120,14 +120,14 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
     scales: {
       y: {
         beginAtZero: true,
-        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-        ticks: { color: 'rgba(255, 255, 255, 0.8)' },
-        border: { color: 'rgba(255, 255, 255, 0.2)' },
+        grid: { color: 'rgba(229, 231, 235, 0.5)' },
+        ticks: { color: '#6b7280' },
+        border: { color: 'rgba(229, 231, 235, 1)' },
       },
       x: {
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-        ticks: { color: 'rgba(255, 255, 255, 0.8)' },
-        border: { color: 'rgba(255, 255, 255, 0.2)' },
+        grid: { color: 'rgba(229, 231, 235, 0.2)' },
+        ticks: { color: '#6b7280' },
+        border: { color: 'rgba(229, 231, 235, 1)' },
       },
     },
   };
@@ -145,7 +145,7 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(75, 85, 99, 0.95)',
         padding: 12,
         cornerRadius: 8,
       },
@@ -155,19 +155,19 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
 
   const getActivityIcon = (type) => {
     switch(type) {
-      case 'student': return <UserOutlined className="text-blue-600 dark:text-blue-400" />;
-      case 'teacher': return <TeamOutlined className="text-green-600 dark:text-green-400" />;
-      case 'payment': return <DollarOutlined className="text-purple-600 dark:text-purple-400" />;
-      default: return <FileTextOutlined className="text-gray-600 dark:text-gray-400" />;
+      case 'student': return <UserOutlined className="text-primary" />;
+      case 'teacher': return <TeamOutlined className="text-secondary" />;
+      case 'payment': return <DollarOutlined className="text-primary-light" />;
+      default: return <FileTextOutlined className="text-gray-600" />;
     }
   };
 
   const getActivityColor = (type) => {
     switch(type) {
-      case 'student': return 'border-l-blue-500 bg-blue-50 dark:bg-blue-900';
-      case 'teacher': return 'border-l-green-500 bg-green-50 dark:bg-green-900';
-      case 'payment': return 'border-l-purple-500 bg-purple-50 dark:bg-purple-900';
-      default: return 'border-l-gray-500 bg-gray-50 dark:bg-gray-700';
+      case 'student': return 'border-l-primary bg-blue-50';
+      case 'teacher': return 'border-l-secondary bg-green-50';
+      case 'payment': return 'border-l-primary-light bg-blue-50';
+      default: return 'border-l-gray-500 bg-gray-50';
     }
   };
 
@@ -185,11 +185,11 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             <Card
               title={
                 <div className="flex items-center gap-2">
-                  <RiseOutlined className="text-purple-600 dark:text-purple-400" />
-                  <span className="text-gray-900 dark:text-gray-100">Fee Collection Trend</span>
+                  <RiseOutlined className="text-primary" />
+                  <span className="text-gray-900">Fee Collection Trend</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
+              className="rounded-2xl shadow-md border-gray-200 bg-white"
             >
               <div style={{ height: '250px' }}>
                 {dashboardData.feeTrend.data.length > 0 ? (
@@ -215,11 +215,11 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                 <Card
                   title={
                     <div className="flex items-center gap-2">
-                      <ClassOutlined className="text-orange-600 dark:text-orange-400" />
-                      <span className="text-gray-900 dark:text-gray-100">Class Distribution</span>
+                      <ClassOutlined className="text-secondary" />
+                      <span className="text-gray-900">Class Distribution</span>
                     </div>
                   }
-                  className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
+                  className="rounded-2xl shadow-md border-gray-200 bg-white"
                 >
                   <div style={{ height: '250px' }}>
                     {dashboardData.classDistribution.data.length > 0 ? (
@@ -244,11 +244,11 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                 <Card
                   title={
                     <div className="flex items-center gap-2">
-                      <UserOutlined className="text-blue-600 dark:text-blue-400" />
-                      <span className="text-gray-900 dark:text-gray-100">Gender Distribution</span>
+                      <UserOutlined className="text-primary" />
+                      <span className="text-gray-900">Gender Distribution</span>
                     </div>
                   }
-                  className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
+                  className="rounded-2xl shadow-md border-gray-200 bg-white"
                 >
                   <div style={{ height: '250px' }}>
                     {stats.students.total > 0 ? (
@@ -274,11 +274,11 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             <Card
               title={
                 <div className="flex items-center gap-2">
-                  <DollarOutlined className="text-green-600 dark:text-green-400" />
-                  <span className="text-gray-900 dark:text-gray-100">Fee Structure Breakdown</span>
+                  <DollarOutlined className="text-secondary" />
+                  <span className="text-gray-900">Fee Structure Breakdown</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
+              className="rounded-2xl shadow-md border-gray-200 bg-white"
             >
               <div style={{ height: '280px' }}>
                 {dashboardData.feeBreakdown.data.length > 0 ? (
@@ -307,10 +307,10 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             <Card
               title={
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-gray-900 dark:text-gray-100">⚡ Quick Actions</span>
+                  <span className="text-base font-semibold text-gray-900">⚡ Quick Actions</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
+              className="rounded-2xl shadow-md border-gray-200 bg-white"
             >
               <div className="space-y-3">
                 {quickActions.map((action, idx) => (
@@ -343,22 +343,22 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             <Card
               title={
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-gray-900 dark:text-gray-100">📊 School Overview</span>
+                  <span className="text-base font-semibold text-gray-900">📊 School Overview</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
+              className="rounded-2xl shadow-md border-gray-200 bg-white"
             >
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between mb-2">
-                    <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">Student Capacity</Text>
-                    <Text strong className="text-blue-600 dark:text-blue-400">{stats.students.total}/500</Text>
+                    <Text className="text-sm font-medium text-gray-900">Student Capacity</Text>
+                    <Text strong className="text-primary">{stats.students.total}/500</Text>
                   </div>
                   <Progress
                     percent={Math.min((stats.students.total / 500) * 100, 100)}
                     strokeColor={{
-                      '0%': '#3b82f6',
-                      '100%': '#8b5cf6',
+                      '0%': '#4169E1',
+                      '100%': '#6A8CFF',
                     }}
                     strokeWidth={10}
                     className="custom-progress"
@@ -367,8 +367,8 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
 
                 <div>
                   <div className="flex justify-between mb-2">
-                    <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">Student-Teacher Ratio</Text>
-                    <Text strong className="text-green-600 dark:text-green-400">
+                    <Text className="text-sm font-medium text-gray-900">Student-Teacher Ratio</Text>
+                    <Text strong className="text-secondary">
                       {stats.students.total > 0 && stats.teachers.total > 0
                         ? `1:${Math.round(stats.students.total / stats.teachers.total)}`
                         : 'N/A'
@@ -377,21 +377,21 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                   </div>
                   <Progress
                     percent={Math.min((stats.teachers.total / 20) * 100, 100)}
-                    strokeColor="#10b981"
+                    strokeColor="#2ecc71"
                     strokeWidth={10}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-700 dark:to-gray-600 rounded-xl border border-blue-200 dark:border-gray-600">
-                    <ManOutlined className="text-2xl text-blue-600 dark:text-blue-400 mb-1" />
-                    <Text strong className="block text-blue-700 dark:text-blue-300 text-lg">{stats.students.male}</Text>
-                    <Text type="secondary" className="text-xs text-gray-600 dark:text-gray-400">Male Students</Text>
+                  <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                    <ManOutlined className="text-2xl text-primary mb-1" />
+                    <Text strong className="block text-blue-700 text-lg">{stats.students.male}</Text>
+                    <Text type="secondary" className="text-xs text-gray-600">Male Students</Text>
                   </div>
-                  <div className="text-center p-3 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-gray-700 dark:to-gray-600 rounded-xl border border-pink-200 dark:border-gray-600">
-                    <WomanOutlined className="text-2xl text-pink-600 dark:text-pink-400 mb-1" />
-                    <Text strong className="block text-pink-700 dark:text-pink-300 text-lg">{stats.students.female}</Text>
-                    <Text type="secondary" className="text-xs text-gray-600 dark:text-gray-400">Female Students</Text>
+                  <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+                    <WomanOutlined className="text-2xl text-secondary mb-1" />
+                    <Text strong className="block text-green-700 text-lg">{stats.students.female}</Text>
+                    <Text type="secondary" className="text-xs text-gray-600">Female Students</Text>
                   </div>
                 </div>
               </div>
@@ -407,13 +407,13 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
             <Card
               title={
                 <div className="flex items-center gap-2">
-                  <ClockCircleOutlined className="text-purple-600 dark:text-purple-400" />
-                  <span className="text-gray-900 dark:text-gray-100">Recent Activities</span>
+                  <ClockCircleOutlined className="text-primary-light" />
+                  <span className="text-gray-900">Recent Activities</span>
                 </div>
               }
-              className="rounded-2xl shadow-md border-slate-200 bg-white dark:bg-gray-800"
+              className="rounded-2xl shadow-md border-gray-200 bg-white"
               extra={
-                <Button type="link" size="small" className="text-purple-600 dark:text-purple-400">
+                <Button type="link" size="small" className="text-primary-light">
                   View All
                 </Button>
               }
@@ -432,10 +432,10 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
                         {getActivityIcon(activity.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <Text className="block text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                        <Text className="block text-sm font-medium text-gray-800 truncate">
                           {activity.description}
                         </Text>
-                        <Text type="secondary" className="text-xs flex items-center gap-1 mt-1 text-gray-600 dark:text-gray-400">
+                        <Text type="secondary" className="text-xs flex items-center gap-1 mt-1 text-gray-600">
                           <ClockCircleOutlined className="text-xs" />
                           {activity.time}
                         </Text>
@@ -456,23 +456,3 @@ export default function DashboardCharts({ dashboardData, quickActions, recentAct
     </Row>
   );
 }
-
-// Add custom scrollbar styling for dark mode
-const style = document.createElement('style');
-style.textContent = `
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-  }
-`;
-document.head.appendChild(style);

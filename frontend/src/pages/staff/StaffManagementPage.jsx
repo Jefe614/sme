@@ -20,8 +20,8 @@ import {
   DeleteOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import Swal from "sweetalert2";
 import { getStaff, deleteStaff, updateStaff } from "../../api/auth";
+import { showNotification, handleApiError } from "../../utils/notifications";
 
 const { Title, Text } = Typography;
 
@@ -41,10 +41,10 @@ export default function StaffManagementPage() {
     try {
       const response = await getStaff();
       console.log("API Response:", response);
-      
+
       // Handle the actual API response structure - staff is in response.data.staff
       let staffData = [];
-      
+
       if (response && response.data && Array.isArray(response.data.staff)) {
         staffData = response.data.staff;
       } else if (Array.isArray(response)) {
@@ -52,25 +52,18 @@ export default function StaffManagementPage() {
       } else if (response && Array.isArray(response.data)) {
         staffData = response.data;
       }
-      
+
       console.log("Processed staff data:", staffData);
-      
+
       // Filter for teachers if on teacher route
-      const filteredStaff = isTeacherRoute 
-        ? staffData.filter(s => s.staff_type === "teaching") 
+      const filteredStaff = isTeacherRoute
+        ? staffData.filter(s => s.staff_type === "teaching")
         : staffData;
-      
+
       setStaff(filteredStaff);
     } catch (error) {
       console.error("Error fetching staff:", error);
-      Swal.fire({
-        title: "Error",
-        text: "Failed to load staff",
-        icon: "error",
-        confirmButtonText: "OK",
-        width: "600px",
-        customClass: { popup: "large-success-modal" },
-      });
+      handleApiError(error, "Failed to load staff");
     } finally {
       setLoading(false);
     }
@@ -78,52 +71,33 @@ export default function StaffManagementPage() {
 
   const handleDelete = async (id) => {
   console.log("Deleting staff with ID:", id); // Debug log
-  
+
   if (!id) {
     console.error("Staff ID is undefined or null");
-    // You can show a small notification instead of Swal
-    message.error("Invalid staff ID");
+    showNotification.error("Invalid staff ID");
     return;
   }
 
   try {
     await deleteStaff(id);
-    // Remove the Swal.fire success notification
-    // The Popconfirm already handled the confirmation
     fetchStaff(); // Just refresh the staff list
   } catch (error) {
     console.error("Error deleting staff:", error);
     console.error("Full error response:", error.response);
-    
+
     const errorMessage = error.response?.data?.error || error.message || "Failed to delete staff";
-    
-    message.error(errorMessage);
+
+    showNotification.error("Error", errorMessage);
   }
 };
   const handleStatusToggle = async (staff) => {
     try {
       await updateStaff(staff.id, { is_active: !staff.is_active });
-      await Swal.fire({
-        title: "Success!",
-        text: `Staff ${staff.is_active ? "deactivated" : "activated"} successfully!`,
-        icon: "success",
-        confirmButtonText: "OK",
-        width: "600px",
-        timer: 2000,
-        timerProgressBar: true,
-        customClass: { popup: "large-success-modal" },
-      });
+      showNotification.success("Success", `Staff ${staff.is_active ? "deactivated" : "activated"} successfully!`);
       fetchStaff();
     } catch (error) {
       console.error("Error updating staff status:", error);
-      Swal.fire({
-        title: "Error",
-        text: "Failed to update staff status",
-        icon: "error",
-        confirmButtonText: "OK",
-        width: "600px",
-        customClass: { popup: "large-success-modal" },
-      });
+      handleApiError(error, "Failed to update staff status");
     }
   };
 
@@ -186,10 +160,10 @@ export default function StaffManagementPage() {
       key: "name",
       render: (_, record) => (
         <Space>
-          <Avatar 
-            size="small" 
-            src={record.profile_image} 
-            icon={!record.profile_image && <UserOutlined />} 
+          <Avatar
+            size="small"
+            src={record.profile_image}
+            icon={!record.profile_image && <UserOutlined />}
           />
           <div>
             <Text strong>{record.full_name || `${record.first_name} ${record.last_name}`}</Text>
