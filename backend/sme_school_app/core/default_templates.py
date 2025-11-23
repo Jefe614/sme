@@ -1,22 +1,23 @@
-# Default school document templates with placeholders
+# Default school document templates with fillable blanks
 
 DEFAULT_DOCUMENT_TEMPLATES = [
     {
         "name": "Admission Letter",
         "category": "admission",
         "description": "Official admission letter template for new students",
-        "template_body": """{{school_name}}
-{{school_address}}
+        "template_body": """______________________________
+______________________________
+______________________________
 
-{{issue_date}}
+______________________________
 
-Dear {{parent_name}},
+Dear ______________________________,
 
-Subject: Admission of {{student_name}} to {{class}}
+Subject: Admission of ______________________________ to ______________________________
 
-We are pleased to inform you that {{student_name}} has been admitted to {{class}} at {{school_name}} for the {{term}} academic year.
+We are pleased to inform you that ______________________________ has been admitted to ______________________________ at ______________________________ for the ______________________________ academic year.
 
-Admission Number: {{admission_number}}
+Admission Number: ______________________________
 
 Please complete the following formalities within 7 working days of receiving this letter:
 
@@ -25,47 +26,47 @@ Please complete the following formalities within 7 working days of receiving thi
 3. Completion of admission forms
 4. Payment of first term fees
 
-For any queries, please contact the admission office at {{school_phone}} or email {{school_email}}.
+For any queries, please contact the admission office at ______________________________ or email ______________________________.
 
-Congratulations and we look forward to welcoming {{student_name}} to our school family.
+Congratulations and we look forward to welcoming ______________________________ to our school family.
 
 Sincerely,
 
-{{principal_name}}
+______________________________
 Principal
-{{school_name}}""",
+______________________________""",
         "is_default": True
     },
     {
         "name": "Transfer Letter",
         "category": "transfer",
         "description": "Student transfer certificate template",
-        "template_body": """{{school_name}}
-{{school_address}}
+        "template_body": """______________________________
+______________________________
 
-{{issue_date}}
+______________________________
 
 TRANSFER CERTIFICATE
 
-This is to certify that {{student_name}}, son/daughter of {{parent_name}}, has been a student of this school from {{admission_date}} to {{transfer_date}}.
+This is to certify that ______________________________, son/daughter of ______________________________, has been a student of this school from ______________________________ to ______________________________.
 
 Academic Details:
-- Class: {{class}}
-- Roll Number: {{roll_number}}
-- Admission Number: {{admission_number}}
-- Academic Year: {{academic_year}}
+- Class: ______________________________
+- Roll Number: ______________________________
+- Admission Number: ______________________________
+- Academic Year: ______________________________
 
-During the period of study, {{student_name}} behaved {{conduct_rating}} and showed {{academic_performance}} academic performance.
+During the period of study, ______________________________ behaved ______________________________ and showed ______________________________ academic performance.
 
-Reason for Transfer: {{transfer_reason}}
+Reason for Transfer: ______________________________
 
-We wish {{student_name}} all the best in future endeavors.
+We wish ______________________________ all the best in future endeavors.
 
 This certificate is issued on the request of the parent/guardian for transfer purposes.
 
-{{principal_name}}
+______________________________
 Principal
-{{school_name}}
+______________________________
 
 Seal of the School""",
         "is_default": True
@@ -74,35 +75,35 @@ Seal of the School""",
         "name": "Warning Letter",
         "category": "warning",
         "description": "Student disciplinary warning letter",
-        "template_body": """{{school_name}}
-{{school_address}}
+        "template_body": """______________________________
+______________________________
 
-{{issue_date}}
+______________________________
 
 WARNING LETTER
 
-To: {{parent_name}}
-{{student_name}}
-{{class}}
-Admission Number: {{admission_number}}
+To: ______________________________
+______________________________
+______________________________
+Admission Number: ______________________________
 
-Subject: Disciplinary Warning for {{student_name}}
+Subject: Disciplinary Warning for ______________________________
 
-Dear {{parent_name}},
+Dear ______________________________,
 
-This letter serves as a formal warning regarding {{student_name}}'s conduct at {{school_name}}.
+This letter serves as a formal warning regarding ______________________________'s conduct at ______________________________.
 
 Details of the incident:
-{{incident_description}}
+______________________________
 
-This behavior violates our school conduct policy and is considered {{severity_level}} offense.
+This behavior violates our school conduct policy and is considered ______________________________ offense.
 
-Warning Level: {{warning_level}}
+Warning Level: ______________________________
 
 Consequences if behavior persists:
-{{consequences}}
+______________________________
 
-We expect {{student_name}} to immediately cease this behavior and focus on academics and positive conduct.
+We expect ______________________________ to immediately cease this behavior and focus on academics and positive conduct.
 
 We invite you to visit the school for further discussion with the class teacher and counselor.
 
@@ -110,40 +111,40 @@ Please contact us immediately if you have any concerns.
 
 Sincerely,
 
-{{teacher_name}}
+______________________________
 Class Teacher
 
-{{principal_name}}
+______________________________
 Principal
-{{school_name}}""",
+______________________________""",
         "is_default": True
     },
     {
         "name": "Suspension Letter",
         "category": "suspension",
         "description": "Student suspension notice",
-        "template_body": """{{school_name}}
-{{school_address}}
+        "template_body": """______________________________
+______________________________
 
-{{issue_date}}
+______________________________
 
 SUSPENSION NOTICE
 
-To: {{parent_name}}
-{{student_name}}
-{{class}}
-Admission Number: {{admission_number}}
+To: ______________________________
+______________________________
+______________________________
+Admission Number: ______________________________
 
 Subject: Suspension from School
 
-Dear {{parent_name}},
+Dear ______________________________,
 
-This is to inform you that {{student_name}} is hereby suspended from {{school_name}} for a period of {{suspension_days}} days, effective from {{suspension_start}} to {{suspension_end}}.
+This is to inform you that ______________________________ is hereby suspended from ______________________________ for a period of ______________________________ days, effective from ______________________________ to ______________________________.
 
 Reason for Suspension:
-{{suspension_reason}}
+______________________________
 
-During the suspension period, {{student_name}} is not permitted to attend any classes, school activities, or access school premises.
+During the suspension period, ______________________________ is not permitted to attend any classes, school activities, or access school premises.
 
 Conditions for reinstatement:
 1. Complete the suspension period
@@ -151,15 +152,15 @@ Conditions for reinstatement:
 3. Written undertaking from you that such behavior will not recur
 4. Payment of any applicable fines
 
-Please ensure that {{student_name}} reports to the school office immediately after the suspension period ends, along with this notice and your written confirmation.
+Please ensure that ______________________________ reports to the school office immediately after the suspension period ends, along with this notice and your written confirmation.
 
 For any queries, please contact the school administration.
 
 Sincerely,
 
-{{principal_name}}
+______________________________
 Principal
-{{school_name}}
+______________________________
 
 Disciplinary Committee""",
         "is_default": True
@@ -168,74 +169,74 @@ Disciplinary Committee""",
         "name": "Fee Reminder",
         "category": "fee_reminder",
         "description": "School fee payment reminder letter",
-        "template_body": """{{school_name}}
-{{school_address}}
+        "template_body": """______________________________
+______________________________
 
-{{issue_date}}
+______________________________
 
 FEE PAYMENT REMINDER
 
-To: {{parent_name}}
-{{student_name}}
-{{class}}
-Admission Number: {{admission_number}}
+To: ______________________________
+______________________________
+______________________________
+Admission Number: ______________________________
 
-Subject: {{reminder_type}} Reminder for Fee Payment
+Subject: ______________________________ Reminder for Fee Payment
 
-Dear {{parent_name}},
+Dear ______________________________,
 
-This is a {{reminder_type}} regarding outstanding school fees for {{student_name}}.
+This is a ______________________________ regarding outstanding school fees for ______________________________.
 
 Fee Details:
-- Term: {{term}}
-- Academic Year: {{academic_year}}
-- Fee Balance: {{fee_balance}} {{currency}}
-- Due Date: {{due_date}}
+- Term: ______________________________
+- Academic Year: ______________________________
+- Fee Balance: ______________________________ ______________________________
+- Due Date: ______________________________
 
 Breakdown:
-{{fee_breakdown}}
+______________________________
 
-Please ensure that the payment is made on or before {{due_date}} via {{payment_methods}}.
+Please ensure that the payment is made on or before ______________________________ via ______________________________.
 
 For payment:
-- Account Number: {{account_number}}
-- Bank: {{bank_name}}
+- Account Number: ______________________________
+- Bank: ______________________________
 
 Failure to pay by the due date may result in:
 - Late payment fees
 - Suspension of classes
 - Removal from class rolls
 
-For any queries or installment arrangements, please contact our accounts office at {{accounts_phone}} or email {{accounts_email}}.
+For any queries or installment arrangements, please contact our accounts office at ______________________________ or email ______________________________.
 
 Thank you for your prompt attention to this matter.
 
 Sincerely,
 
-{{accountant_name}}
+______________________________
 Accountant
-{{school_name}}""",
+______________________________""",
         "is_default": True
     },
     {
         "name": "Clearance Certificate",
         "category": "clearance",
         "description": "Student clearance certificate at graduation/leaving",
-        "template_body": """{{school_name}}
-{{school_address}}
+        "template_body": """______________________________
+______________________________
 
-{{issue_date}}
+______________________________
 
 STUDENT CLEARANCE CERTIFICATE
 
-This is to certify that {{student_name}}, son/daughter of {{parent_name}}, a student of {{class}}, has satisfactorily completed all requirements for clearance from {{school_name}}.
+This is to certify that ______________________________, son/daughter of ______________________________, a student of ______________________________, has satisfactorily completed all requirements for clearance from ______________________________.
 
 Details:
-- Student Name: {{student_name}}
-- Admission Number: {{admission_number}}
-- Class: {{class}}
-- Academic Period: {{enrollment_period}}
-- Date of Clearance: {{clearance_date}}
+- Student Name: ______________________________
+- Admission Number: ______________________________
+- Class: ______________________________
+- Academic Period: ______________________________
+- Date of Clearance: ______________________________
 
 Clearance Status:
 
@@ -244,7 +245,7 @@ Laboratory Equipment: _____________ Date: __________
 Hostel Property: __________________ Date: __________ (if applicable)
 Sports Equipment: ________________ Date: __________
 School Uniform/ID: _______________ Date: __________
-Fee Balance: _____________________ Date: __________ (Amount: {{fee_balance}})
+Fee Balance: _____________________ Date: __________ (Amount: ______________________________)
 
 All accounts have been settled and no dues remain outstanding.
 
@@ -252,15 +253,15 @@ The student has returned all borrowed items and fulfilled all obligations to the
 
 This clearance certificate is issued to facilitate further studies or employment.
 
-{{librarian_signature}}
+______________________________
 Librarian
 
-{{accountant_signature}}
+______________________________
 Accountant
 
-{{principal_signature}}
+______________________________
 Principal
-{{school_name}}
+______________________________
 
 School Seal""",
         "is_default": True

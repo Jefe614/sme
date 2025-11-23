@@ -14,3 +14,4 @@ typing_extensions==4.15.0
 celery==5.3.4
 africastalking==1.2.5
 redis==5.0.1
+reportlab==4.0.7

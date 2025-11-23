@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import ParentMobileLoginAPIView, SetParentPasswordAPIView
+
+from parent.views import ParentMobileLoginAPIView, SetParentPasswordAPIView
 
 urlpatterns = [
     path('parent/login/', ParentMobileLoginAPIView.as_view(), name='parent_mobile_login'),

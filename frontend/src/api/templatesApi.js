@@ -71,6 +71,18 @@ export const generateDocument = async (payload) => {
   }
 };
 
+export const downloadTemplate = async (templateId) => {
+  try {
+    const response = await apiClient.get(`/templates/${templateId}/download/`, {
+      responseType: 'blob' // Important for binary data
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error downloading template:', error);
+    throw error;
+  }
+};
+
 // Helper function to extract placeholders from template body
 export const extractPlaceholders = (templateBody) => {
   const placeholderRegex = /\{\{(\w+)\}\}/g;

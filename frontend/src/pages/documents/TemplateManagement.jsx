@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Table, Tag, Input, Select, Space, Modal, Form, message, Card, Typography, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, EyeOutlined } from '@ant-design/icons';
+import { Button, Table, Tag, Input, Select, Space, Modal, message, Card, Typography, Tooltip, Badge } from 'antd';
+import { EditOutlined, EyeOutlined, DownloadOutlined, SearchOutlined, FilterOutlined, CloseCircleOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 import {
   fetchTemplates,
-  createTemplate,
-  updateTemplate,
-  deleteTemplate,
   fetchTemplateCategories,
+  downloadTemplate,
 } from '../../api/templatesApi';
 
-const { Title } = Typography;
-const { TextArea } = Input;
+const { Title, Text } = Typography;
 const { Option } = Select;
 
 const TemplateManagement = () => {
@@ -23,9 +20,10 @@ const TemplateManagement = () => {
     total: 0,
   });
   const [filters, setFilters] = useState({});
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [form] = Form.useForm();
+  const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
+  const [searchValue, setSearchValue] = useState('');
+  const [zoomLevel, setZoomLevel] = useState(100);
 
   useEffect(() => {
     loadTemplates();
@@ -62,62 +60,29 @@ const TemplateManagement = () => {
     }
   };
 
-  const handleCreate = () => {
-    setEditingTemplate(null);
-    form.resetFields();
-    setIsModalVisible(true);
-  };
-
-  const handleEdit = (template) => {
-    setEditingTemplate(template);
-    form.setFieldsValue(template);
-    setIsModalVisible(true);
-  };
-
-  const handleDelete = async (templateId) => {
-    Modal.confirm({
-      title: 'Delete Template',
-      content: 'Are you sure you want to delete this template?',
-      onOk: async () => {
-        try {
-          await deleteTemplate(templateId);
-          message.success('Template deleted successfully');
-          loadTemplates();
-        } catch (error) {
-          message.error('Failed to delete template');
-        }
-      },
-    });
-  };
-
-  const handleModalOk = async () => {
+  const handleDownload = async (templateId, templateName) => {
     try {
-      const values = await form.validateFields();
-      if (editingTemplate) {
-        await updateTemplate(editingTemplate.id, values);
-        message.success('Template updated successfully');
-      } else {
-        await createTemplate(values);
-        message.success('Template created successfully');
-      }
-      setIsModalVisible(false);
-      loadTemplates();
+      const pdfBlob = await downloadTemplate(templateId);
+
+      // Create a download link
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${templateName.replace(/\s+/g, '_')}.pdf`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      message.success('Template downloaded successfully');
     } catch (error) {
-      if (error.response?.data?.error) {
-        message.error(error.response.data.error);
-      } else {
-        message.error('Failed to save template');
-      }
+      console.error('Download error:', error);
+      message.error('Failed to download template');
     }
-  };
-
-  const handleModalCancel = () => {
-    setIsModalVisible(false);
-    form.resetFields();
-  };
-
-  const handleTableChange = (pagination) => {
-    setPagination(pagination);
   };
 
   const handleSearch = (value) => {
@@ -129,6 +94,30 @@ const TemplateManagement = () => {
     setFilters(prev => ({ ...prev, category: value }));
     setPagination(prev => ({ ...prev, current: 1 }));
   };
+
+  const handleTableChange = (pagination) => {
+    setPagination(pagination);
+  };
+
+  const clearAllFilters = () => {
+    setFilters({});
+    setSearchValue('');
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 10, 200));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 10, 50));
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(100);
+  };
+
+  const activeFiltersCount = Object.keys(filters).filter(key => filters[key] !== undefined).length;
 
   const getCategoryTag = (category) => {
     const categoryLabels = {
@@ -168,15 +157,18 @@ const TemplateManagement = () => {
 
   const columns = [
     {
-      title: 'Name',
+      title: 'Template Name',
       dataIndex: 'name',
       key: 'name',
       sorter: true,
+      width: '25%',
+      render: (name) => <Text strong>{name}</Text>,
     },
     {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
+      width: '15%',
       render: (category) => getCategoryTag(category),
     },
     {
@@ -184,9 +176,14 @@ const TemplateManagement = () => {
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
+      width: '30%',
       render: (description) => (
         <Tooltip title={description}>
-          <span>{description && description.length > 50 ? `${description.substring(0, 50)}...` : description}</span>
+          <span style={{ color: '#666' }}>
+            {description && description.length > 60 
+              ? `${description.substring(0, 60)}...` 
+              : description || 'No description'}
+          </span>
         </Tooltip>
       ),
     },
@@ -194,6 +191,7 @@ const TemplateManagement = () => {
       title: 'Status',
       dataIndex: 'is_active',
       key: 'is_active',
+      width: '10%',
       render: (isActive) => (
         <Tag color={isActive ? 'green' : 'red'}>
           {isActive ? 'Active' : 'Inactive'}
@@ -201,97 +199,122 @@ const TemplateManagement = () => {
       ),
     },
     {
-      title: 'Default',
+      title: 'Type',
       dataIndex: 'is_default',
       key: 'is_default',
+      width: '12%',
       render: (isDefault) => (
         <Tag color={isDefault ? 'blue' : 'default'}>
-          {isDefault ? 'System Default' : 'Custom'}
+          {isDefault ? 'System' : 'Custom'}
         </Tag>
       ),
     },
     {
       title: 'Actions',
       key: 'actions',
+      width: '10%',
       render: (_, record) => (
-        <Space>
-          <Tooltip title="Edit Template">
-            <Button
-              icon={<EditOutlined />}
-              size="small"
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Preview Template">
+        <Space size="small">
+          <Tooltip title="Preview">
             <Button
               icon={<EyeOutlined />}
               size="small"
+              type="text"
               onClick={() => {
-                Modal.info({
-                  title: record.name,
-                  width: 800,
-                  content: (
-                    <div style={{ maxHeight: '400px', overflow: 'auto' }}>
-                      <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-                        {record.template_body}
-                      </pre>
-                    </div>
-                  ),
-                });
+                setPreviewTemplate(record);
+                setIsPreviewModalVisible(true);
+                setZoomLevel(100);
               }}
             />
           </Tooltip>
-          {!record.is_default && (
-            <Tooltip title="Delete Template">
-              <Button
-                icon={<DeleteOutlined />}
-                size="small"
-                danger
-                onClick={() => handleDelete(record.id)}
-              />
-            </Tooltip>
-          )}
+          <Tooltip title="Download PDF">
+            <Button
+              icon={<DownloadOutlined />}
+              size="small"
+              type="primary"
+              onClick={() => handleDownload(record.id, record.name)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
   ];
 
   return (
-    <div>
-      <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <Title level={3}>Document Templates</Title>
-            <p>Manage reusable document templates for school communications</p>
-          </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-          >
-            Create Template
-          </Button>
+    <div style={{ padding: '24px', background: '#f0f2f5', minHeight: '100vh' }}>
+      <Card 
+        bordered={false}
+        style={{ 
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}
+      >
+        <div style={{ marginBottom: 24 }}>
+          <Title level={2} style={{ marginBottom: 8 }}>Document Templates</Title>
+          <Text type="secondary">Preview and download document templates for school communications</Text>
         </div>
 
-        <Space style={{ marginBottom: 16 }}>
-          <Input.Search
-            placeholder="Search templates..."
-            onSearch={handleSearch}
-            style={{ width: 300 }}
-          />
-          <Select
-            placeholder="Filter by category"
-            allowClear
-            style={{ width: 200 }}
-            onChange={handleCategoryFilter}
-          >
-            {categories.map((category) => (
-              <Option key={category.value} value={category.value}>
-                {category.label}
-              </Option>
-            ))}
-          </Select>
-        </Space>
+        <Card 
+          size="small" 
+          style={{ 
+            marginBottom: 20, 
+            background: '#fafafa',
+            border: '1px solid #e8e8e8'
+          }}
+        >
+          <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
+            <Space wrap>
+              <Input.Search
+                placeholder="Search templates by name..."
+                prefix={<SearchOutlined />}
+                onSearch={handleSearch}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                style={{ width: 280 }}
+                allowClear
+              />
+              <Select
+                placeholder="Filter by category"
+                allowClear
+                style={{ width: 200 }}
+                onChange={handleCategoryFilter}
+                value={filters.category}
+                suffixIcon={<FilterOutlined />}
+              >
+                {categories.map((category) => (
+                  <Option key={category.value} value={category.value}>
+                    {category.label}
+                  </Option>
+                ))}
+              </Select>
+              <Space>
+                <input
+                  type="checkbox"
+                  id="showDefaults"
+                  checked={filters.is_default === true}
+                  onChange={(e) => {
+                    const value = e.target.checked ? true : undefined;
+                    setFilters(prev => ({ ...prev, is_default: value }));
+                    setPagination(prev => ({ ...prev, current: 1 }));
+                  }}
+                  style={{ cursor: 'pointer' }}
+                />
+                <label htmlFor="showDefaults" style={{ margin: 0, cursor: 'pointer', userSelect: 'none' }}>
+                  System Templates Only
+                </label>
+              </Space>
+            </Space>
+            {activeFiltersCount > 0 && (
+              <Button 
+                icon={<CloseCircleOutlined />} 
+                onClick={clearAllFilters}
+                size="small"
+              >
+                Clear Filters ({activeFiltersCount})
+              </Button>
+            )}
+          </Space>
+        </Card>
 
         <Table
           columns={columns}
@@ -305,73 +328,146 @@ const TemplateManagement = () => {
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} templates`,
+              `Showing ${range[0]}-${range[1]} of ${total} templates`,
+            pageSizeOptions: ['10', '20', '50', '100'],
           }}
           onChange={handleTableChange}
+          bordered
+          size="middle"
         />
 
+        {/* Enhanced Preview Modal */}
         <Modal
-          title={editingTemplate ? 'Edit Template' : 'Create Template'}
-          open={isModalVisible}
-          onOk={handleModalOk}
-          onCancel={handleModalCancel}
-          width={800}
-          okText={editingTemplate ? 'Update' : 'Create'}
+          title={
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              paddingRight: '50px' 
+            }}>
+              <div>
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '6px' }}>
+                  {previewTemplate?.name}
+                </div>
+                <Space size="small">
+                  {previewTemplate?.category && getCategoryTag(previewTemplate.category)}
+                  <Tag color={previewTemplate?.is_default ? 'blue' : 'default'}>
+                    {previewTemplate?.is_default ? 'System Template' : 'Custom Template'}
+                  </Tag>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    A4 Format (210mm × 297mm)
+                  </Text>
+                </Space>
+              </div>
+              <Space>
+                <Space.Compact>
+                  <Tooltip title="Zoom Out">
+                    <Button
+                      icon={<ZoomOutOutlined />}
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 50}
+                    />
+                  </Tooltip>
+                  <Button 
+                    onClick={handleResetZoom}
+                    style={{ minWidth: '70px' }}
+                  >
+                    {zoomLevel}%
+                  </Button>
+                  <Tooltip title="Zoom In">
+                    <Button
+                      icon={<ZoomInOutlined />}
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 200}
+                    />
+                  </Tooltip>
+                </Space.Compact>
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  size="large"
+                  onClick={() => handleDownload(previewTemplate?.id, previewTemplate?.name)}
+                  style={{ borderRadius: '6px' }}
+                >
+                  Download PDF
+                </Button>
+              </Space>
+            </div>
+          }
+          open={isPreviewModalVisible}
+          onCancel={() => setIsPreviewModalVisible(false)}
+          footer={null}
+          width="96vw"
+          style={{ top: 10, maxWidth: '1600px' }}
+          bodyStyle={{ 
+            height: '86vh', 
+            padding: '0',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            overflow: 'hidden'
+          }}
         >
-          <Form form={form} layout="vertical">
-            <Form.Item
-              name="name"
-              label="Template Name"
-              rules={[{ required: true, message: 'Please enter template name' }]}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            height: '100%',
+            padding: '30px 30px 60px',
+            overflowY: 'auto',
+            overflowX: 'auto',
+          }}>
+            {previewTemplate?.description && (
+              <div style={{
+                width: `${210 * (zoomLevel / 100)}mm`,
+                padding: `${12 * (zoomLevel / 100)}px ${20 * (zoomLevel / 100)}px`,
+                backgroundColor: 'rgba(255,255,255,0.98)',
+                borderRadius: '8px 8px 0 0',
+                fontSize: `${14 * (zoomLevel / 100)}px`,
+                color: '#333',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                marginBottom: '0',
+                border: '1px solid #e0e0e0',
+                borderBottom: 'none',
+                transition: 'all 0.3s ease',
+              }}>
+                <Text strong style={{ color: '#1890ff', fontSize: `${14 * (zoomLevel / 100)}px` }}>Template Description: </Text>
+                <Text style={{ fontSize: `${14 * (zoomLevel / 100)}px` }}>{previewTemplate.description}</Text>
+              </div>
+            )}
+            <div
+              style={{
+                width: `${210 * (zoomLevel / 100)}mm`,
+                minHeight: `${297 * (zoomLevel / 100)}mm`,
+                padding: `${25 * (zoomLevel / 100)}mm ${20 * (zoomLevel / 100)}mm`,
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                fontFamily: '"Times New Roman", Georgia, serif',
+                fontSize: `${12 * (zoomLevel / 100)}pt`,
+                lineHeight: '1.8',
+                boxShadow: '0 30px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05)',
+                whiteSpace: 'pre-wrap',
+                wordWrap: 'break-word',
+                position: 'relative',
+                borderRadius: previewTemplate?.description ? '0 0 2px 2px' : '2px',
+                transition: 'all 0.3s ease',
+                marginBottom: `${30 * (zoomLevel / 100)}px`,
+              }}
             >
-              <Input placeholder="e.g., Admission Letter 2024" />
-            </Form.Item>
-
-            <Form.Item
-              name="category"
-              label="Category"
-              rules={[{ required: true, message: 'Please select a category' }]}
-            >
-              <Select placeholder="Select category">
-                {categories.map((category) => (
-                  <Option key={category.value} value={category.value}>
-                    {category.label}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="description"
-              label="Description"
-              rules={[{ required: true, message: 'Please enter description' }]}
-            >
-              <TextArea
-                placeholder="Brief description of the template purpose"
-                rows={2}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="template_body"
-              label="Template Body"
-              rules={[{ required: true, message: 'Please enter template content' }]}
-            >
-              <TextArea
-                placeholder="Enter the template content with {{placeholders}}"
-                rows={12}
-                style={{ fontFamily: 'monospace' }}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="is_active"
-              label="Active"
-              valuePropName="checked"
-            >
-              <input type="checkbox" />
-            </Form.Item>
-          </Form>
+              {previewTemplate?.template_body}
+            </div>
+            <div style={{
+              padding: '12px 24px',
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              borderRadius: '8px',
+              color: '#666',
+              fontSize: '13px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              maxWidth: `${210 * (zoomLevel / 100)}mm`,
+            }}>
+              <Text type="secondary">
+                💡 This is a preview. Download the PDF for the final formatted document. Use zoom controls to adjust view.
+              </Text>
+            </div>
+          </div>
         </Modal>
       </Card>
     </div>

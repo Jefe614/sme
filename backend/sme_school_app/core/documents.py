@@ -10,10 +10,27 @@ from tenants.models import Company
 
 from .models import DocumentTemplate
 from .serializers import DocumentTemplateSerializer
+from .default_templates import DEFAULT_DOCUMENT_TEMPLATES
 
 
 class DocumentTemplateAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def _seed_default_templates(self, company):
+        """Seed default document templates if they don't exist"""
+        if DocumentTemplate.objects.filter(company=company, is_default=True).exists():
+            return
+
+        for template_data in DEFAULT_DOCUMENT_TEMPLATES:
+            if not DocumentTemplate.objects.filter(
+                company=company,
+                name=template_data['name'],
+                category=template_data['category']
+            ).exists():
+                DocumentTemplate.objects.create(
+                    company=company,
+                    **template_data
+                )
 
     def get(self, request):
         company = request.company
@@ -22,6 +39,9 @@ class DocumentTemplateAPIView(APIView):
 
         if company.company_type != "SCHOOL":
             return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Seed default templates if they don't exist
+        self._seed_default_templates(company)
 
         # Search and filter
         q = request.query_params.get("q")
@@ -264,3 +284,82 @@ class GenerateDocumentAPIView(APIView):
                 "generated_at": json.dumps({"timestamp": "now"}),  # You can use proper datetime here
             }
         })
+
+
+class DownloadDocumentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, template_id):
+        """Download template as PDF"""
+        company = request.company
+        if not company:
+            return Response({"error": "No tenant found in request"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            template = DocumentTemplate.objects.get(id=template_id, company=company, is_active=True)
+        except DocumentTemplate.DoesNotExist:
+            return Response({"error": "Template not found or inactive"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+            from reportlab.lib.units import inch
+            from io import BytesIO
+
+            # Create PDF buffer
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=A4)
+
+            # Styles
+            styles = getSampleStyleSheet()
+            normal_style = ParagraphStyle(
+                'Normal',
+                parent=styles['Normal'],
+                fontSize=12,
+                leading=14,
+                spaceAfter=12,
+            )
+
+            # Build PDF content
+            content = []
+
+            # Split template body by lines and create paragraphs
+            lines = template.template_body.split('\n')
+
+            for line in lines:
+                if line.strip():
+                    # Handle underlines (______________)
+                    if '______________' in line:
+                        # Replace underlines with spaced text
+                        parts = line.split('______________')
+                        combined_text = ""
+                        for i, part in enumerate(parts):
+                            combined_text += part
+                            if i < len(parts) - 1:
+                                # Add some placeholder spacing
+                                combined_text += "______________________________"
+                        content.append(Paragraph(combined_text, normal_style))
+                    else:
+                        content.append(Paragraph(line, normal_style))
+                else:
+                    content.append(Spacer(1, 12))
+
+            # Build the PDF
+            doc.build(content)
+
+            # Get PDF data
+            pdf_data = buffer.getvalue()
+            buffer.close()
+
+            # Create response
+            from django.http import HttpResponse
+            response = HttpResponse(pdf_data, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{template.name}.pdf"'
+
+            return response
+
+        except ImportError:
+            return Response({"error": "PDF generation not available. Please install reportlab."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({"error": f"PDF generation failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
