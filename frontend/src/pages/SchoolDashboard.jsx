@@ -101,51 +101,12 @@ export default function SchoolDashboard() {
   const { stats, recentActivities } = dashboardData;
 
   return (
-    <div className="space-y-6 p-6 bg-gray-100 min-h-screen">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200"
-      >
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center">
-          <div>
-            <AntTitle level={2} className="!mb-1 text-slate-800 flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-xl flex items-center justify-center">
-                <ClassOutlined className="text-white text-2xl" />
-              </div>
-              School Dashboard
-            </AntTitle>
-            <Text type="secondary" className="text-base text-gray-600">
-              Welcome back, <span className="font-semibold text-slate-700">{user?.name || 'Administrator'}</span>
-            </Text>
-          </div>
-          <Space className="mt-4 lg:mt-0" size="middle">
-            <Button 
-              icon={<ReloadOutlined />} 
-              onClick={fetchDashboard}
-              className="hover:scale-105 transition-transform"
-            >
-              Refresh
-            </Button>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={() => navigate('/school-dashboard/students/add')}
-              size="large"
-              className="bg-primary border-none shadow-lg hover:shadow-xl hover:scale-105 transition-all hover:bg-primary-dark"
-            >
-              Add Student
-            </Button>
-          </Space>
-        </div>
-      </motion.div>
-
+    <div className="space-y-6 bg-gray-100 min-h-screen">
       {/* Stats Component */}
       <DashboardStats stats={stats} navigate={navigate} />
 
       {/* Charts and Activities */}
-      <DashboardCharts 
+      <DashboardCharts
         dashboardData={dashboardData}
         quickActions={quickActions}
         recentActivities={recentActivities}

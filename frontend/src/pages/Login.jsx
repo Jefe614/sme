@@ -2,7 +2,6 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { FaUser, FaLock } from 'react-icons/fa';
-import { motion } from 'framer-motion';
 
 export default function Login() {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -27,12 +26,10 @@ const { handleLogin } = useContext(AuthContext);
       setError(err.response?.data?.message || 'Login failed');
     }
   };
+
   return (
     <div className="flex items-center justify-center h-screen bg-gradient-to-r from-primary-light to-primary">
-      <motion.form
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      <form
         onSubmit={handleSubmit}
         className="bg-white p-10 rounded-xl shadow-lg w-96"
       >
@@ -68,7 +65,17 @@ const { handleLogin } = useContext(AuthContext);
         >
           Login
         </button>
-      </motion.form>
+
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/forgot-password')}
+            className="text-primary hover:text-primary-dark text-sm underline"
+          >
+            Forgot Password?
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

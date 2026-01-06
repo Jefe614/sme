@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class CompanyTenantMiddleware(TenantMainMiddleware):
-    PUBLIC_PATHS = ['/api/signup/', '/api/login/']
+    PUBLIC_PATHS = ['/api/signup/', '/api/login/', '/api/forgot-password/', '/api/reset-password/' ]
 
     def process_request(self, request):
         if any(request.path.startswith(path) for path in self.PUBLIC_PATHS):

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Layout, Avatar, Typography, Badge, Drawer, Button } from 'antd';
 import { 
@@ -7,6 +7,8 @@ import {
   BarChartOutlined, FileTextOutlined, BellOutlined, SettingOutlined, 
   MenuFoldOutlined, MenuUnfoldOutlined, BookOutlined, UsergroupAddOutlined 
 } from '@ant-design/icons';
+import { AuthContext } from '../context/AuthContext';
+
 
 const { Sider } = Layout;
 const { Text } = Typography;
@@ -14,7 +16,7 @@ const { Text } = Typography;
 // Colors
 const PRIMARY_COLOR = '#0F172A'; // Dark navy
 const SECONDARY_COLOR = '#3B82F6'; // Blue highlight
-const HOVER_COLOR = '#EF4444'; // Red hover
+const HOVER_COLOR = '#FFFFFF'; // White hover
 const SELECTED_COLOR = '#60A5FA'; // Light blue selected
 const BADGE_COLOR = '#DC2626'; // Red badge
 const TEXT_COLOR = '#F8FAFC'; // Light text
@@ -24,6 +26,7 @@ export default function Sidebar({ userType, onCollapse }) {
   const [mobileVisible, setMobileVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -93,7 +96,7 @@ export default function Sidebar({ userType, onCollapse }) {
           transition: 'all 0.3s ease',
           textDecoration: 'none',
           borderLeft: selectedKeys.includes(item.key) ? `3px solid ${SELECTED_COLOR}` : '3px solid transparent',
-          fontSize: collapsed ? '0' : '14px',
+          fontSize: collapsed ? '0' : '12px',
           width: collapsed ? '100%' : 'auto'
         }}
         onMouseEnter={(e) => {
@@ -141,10 +144,10 @@ export default function Sidebar({ userType, onCollapse }) {
           </div>
           {!collapsed && (
             <div style={{ overflow: 'hidden' }}>
-              <Text style={{ color: TEXT_COLOR, fontWeight: '600', fontSize: '14px', display: 'block' }}>
+              <Text style={{ color: TEXT_COLOR, fontWeight: '600', fontSize: '12px', display: 'block' }}>
                 {userType === 'SME' ? 'SME' : 'School'} Portal
               </Text>
-              <Text style={{ color: SECONDARY_COLOR, fontSize: '12px', display: 'block' }}>
+              <Text style={{ color: SECONDARY_COLOR, fontSize: '10px', display: 'block' }}>
                 Management System
               </Text>
             </div>
@@ -153,7 +156,20 @@ export default function Sidebar({ userType, onCollapse }) {
       </div>
 
       {/* Menu */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px' }}>
+      <div style={{
+        flex: 1,
+        overflowY: 'scroll',
+        scrollbarWidth: 'none', // Firefox
+        msOverflowStyle: 'none', // IE and Edge
+        padding: '8px 6px'
+      }}
+      className="scrollbar-hide" // Custom class for webkit browsers
+      >
+        <style jsx>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         {renderMenuItems()}
       </div>
 
@@ -180,7 +196,7 @@ export default function Sidebar({ userType, onCollapse }) {
               Administrator
             </Text>
             <Text style={{ color: 'rgba(248, 250, 252, 0.7)', fontSize: '12px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              admin@school.com
+              <span>{user.email || 'N/A'}</span>
             </Text>
           </div>
         </div>
@@ -216,8 +232,8 @@ export default function Sidebar({ userType, onCollapse }) {
           trigger={null}
           collapsible
           collapsed={collapsed}
-          width={250}
-          collapsedWidth={80}
+          width={200}
+          collapsedWidth={60}
           style={{
             position: 'fixed',
             left: 0,

@@ -6,10 +6,14 @@ import PrivateRoute from './components/PrivateRoute';
 import DashboardSidebarLayout from './components/DashboardSidebarLayout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import SmeDashboard from './pages/SmeDashboard';
 import SchoolDashboard from './pages/SchoolDashboard';
 import StudentCreationPage from './pages/students/AddStudents';
 import StudentsListPage from './pages/students/ViewStudents';
+import ViewStudentPage from './pages/students/ViewStudent';
+import EditStudentPage from './pages/students/EditStudent';
 import ClassManagementPage from './pages/classrooms/ViewClassroom';
 import CreateClassPage from './pages/classrooms/AddClassRoom';
 import StaffManagementPage from './pages/staff/StaffManagementPage';
@@ -29,6 +33,8 @@ function App() {
               <Route path="/" element={<Navigate to="/login" />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
               {/* SME Dashboard with Layout */}
               <Route
@@ -56,8 +62,10 @@ function App() {
                     <Route path ="*" element={<NotFoundPage />} />
                     <Route path="add/students" element={<StudentCreationPage />} />
                     <Route path="students" element={<StudentsListPage />} />
+                    <Route path="students/:id" element={<ViewStudentPage />} />
+                    <Route path="students/:id/edit" element={<EditStudentPage />} />
                     <Route path="classrooms" element={<ClassManagementPage />} />
-                    <Route path="add/classrooms" element={<CreateClassPage />} />
+                    <Route path="classrooms/add" element={<CreateClassPage />} />
                     <Route path="staff" element={<StaffManagementPage />} />
                     <Route path="teachers" element={<StaffManagementPage />} />
                     <Route path="staff/add" element={<CreateStaffPage />} />

@@ -31,6 +31,12 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 import uuid
 from django.db import connection
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 
 class SignupAPIView(APIView):
     def post(self, request):
@@ -140,12 +146,30 @@ class CompanyAPIView(APIView):
 class StudentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, pk=None):
         company = request.company
-        
+
+        if not company or company.company_type != "SCHOOL":
+            return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # If pk is provided, return a single student
+        if pk:
+            try:
+                student = Student.objects.get(id=pk, company=company)
+                serializer = StudentSerializer(student)
+                return Response({
+                    "message": "Student retrieved successfully",
+                    "student": serializer.data
+                })
+            except Student.DoesNotExist:
+                return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Otherwise, return list of students
         # Get all students for the company
         students = Student.objects.filter(company=company)
-        
+
         # Search filter
         q = request.query_params.get("q")
         if q:
@@ -155,17 +179,17 @@ class StudentAPIView(APIView):
                 Q(admission_number__icontains=q) |
                 Q(parent_name__icontains=q)
             )
-        
+
         # Filter by student type if provided
         student_type = request.query_params.get('student_type')
         if student_type:
             students = students.filter(student_type=student_type)
-        
+
         # Filter by class if provided
         student_class = request.query_params.get('class')
         if student_class:
             students = students.filter(student_class_id=student_class)
-        
+
         # Filter by active status if provided
         is_active = request.query_params.get('is_active')
         if is_active is not None:
@@ -173,29 +197,29 @@ class StudentAPIView(APIView):
                 students = students.filter(is_active=True)
             elif is_active.lower() == 'false':
                 students = students.filter(is_active=False)
-        
+
         # Order by latest first
         students = students.order_by('-date_joined')
-        
+
         # Pagination
         page_size = request.query_params.get("pageSize", 10)
         page_number = request.query_params.get("current", 1)
-        
+
         try:
             page_size = int(page_size)
             page_number = int(page_number)
         except (TypeError, ValueError):
             page_size = 10
             page_number = 1
-        
+
         paginator = Paginator(students, page_size)
-        
+
         try:
             page = paginator.page(page_number)
         except EmptyPage:
             page = paginator.page(1)
             page_number = 1
-        
+
         return Response({
             "message": "Students fetched successfully",
             "data": StudentSerializer(page, many=True).data,
@@ -206,6 +230,7 @@ class StudentAPIView(APIView):
                 "totalPages": paginator.num_pages,
             },
         })
+
     def post(self, request):
         company = request.company
 
@@ -286,7 +311,112 @@ class StudentAPIView(APIView):
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            
+
+    def put(self, request, pk=None):
+        """Update a student"""
+        company = request.company
+
+        if not company or company.company_type != "SCHOOL":
+            return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = Student.objects.get(id=pk, company=company)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Use request.POST for form fields
+        formData = request.POST
+        files = request.FILES
+
+        def parse_date(date_str):
+            if date_str:
+                try:
+                    return datetime.strptime(date_str, "%Y-%m-%d").date()
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        # Validate student_class if provided
+        student_class = None
+        if formData.get("student_class"):
+            try:
+                student_class = StudentClass.objects.get(id=formData.get("student_class"), company=company)
+            except StudentClass.DoesNotExist:
+                return Response({"error": "Invalid class ID"}, status=status.HTTP_400_BAD_REQUEST)
+
+        update_data = {
+            "first_name": formData.get("first_name", "").strip(),
+            "last_name": formData.get("last_name", "").strip(),
+            "admission_number": formData.get("admission_number", "").strip(),
+            "gender": formData.get("gender"),
+            "student_type": formData.get("student_type", "day"),
+            "parent_name": formData.get("parent_name", "").strip(),
+            "relationship": formData.get("relationship"),
+            "parent_phone": formData.get("parent_phone", "").strip(),
+            "nationality": formData.get("nationality", "").strip(),
+            "roll_number": formData.get("roll_number", "").strip(),
+            "parent_email": formData.get("parent_email", "").strip(),
+            "address": formData.get("address", "").strip(),
+            "hostel": formData.get("hostel", "").strip(),
+            "blood_group": formData.get("blood_group"),
+            "allergies": formData.get("allergies", "").strip(),
+            "medical_conditions": formData.get("medical_conditions", "").strip(),
+        }
+
+        # Handle optional date fields
+        if formData.get("date_of_birth"):
+            update_data["date_of_birth"] = parse_date(formData.get("date_of_birth"))
+        if formData.get("admission_date"):
+            update_data["admission_date"] = parse_date(formData.get("admission_date"))
+
+        # Handle student_class
+        if student_class:
+            update_data["student_class"] = student_class
+
+        # Handle profile image
+        if files.get('profile_image'):
+            update_data['profile_image'] = files.get('profile_image')
+
+        # Validate required fields
+        required_fields = ['first_name', 'last_name', 'gender', 'parent_name', 'relationship', 'parent_phone']
+        missing_fields = [field for field in required_fields if not update_data.get(field)]
+        if missing_fields:
+            return Response({
+                "error": f"Missing required fields: {', '.join(missing_fields)}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            for key, value in update_data.items():
+                setattr(student, key, value)
+            student.save()
+
+            return Response({
+                "message": "Student updated successfully",
+                "student": StudentSerializer(student).data
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk=None):
+        """Delete a student"""
+        company = request.company
+
+        if not company or company.company_type != "SCHOOL":
+            return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = Student.objects.get(id=pk, company=company)
+            student_name = f"{student.first_name} {student.last_name}"
+            student.delete()
+
+            return Response({
+                "message": f"Student '{student_name}' deleted successfully"
+            })
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # -------------------- Fee Payments --------------------
 class FeePaymentAPIView(APIView):
@@ -1285,3 +1415,75 @@ class FeeReminderNotificationAPIView(APIView):
             "message": "Fee reminder notifications have been queued",
             "task_id": task.id
         })
+
+
+# -------------------- Password Reset --------------------
+class ForgotPasswordAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+
+        if not email:
+            return Response({"message": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Don't reveal if email exists or not for security
+            return Response({"message": "User with this email does not exist"}, status=status.HTTP_200_OK)
+
+        # Generate token
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        # Create reset link (in a real app, this would be the frontend URL)
+        reset_link = f"http://localhost:5173/reset-password/{uid}/{token}/"
+
+        # Send email
+        subject = "Password Reset Request"
+        message = render_to_string('password_reset_email.html', {
+            'user': user,
+            'reset_link': reset_link,
+        })
+
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response({"message": "Error sending email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({"message": "Password reset link has been sent"}, status=status.HTTP_200_OK)
+
+
+class ResetPasswordAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, uidb64, token):
+        password = request.data.get("password")
+        confirm_password = request.data.get("confirm_password")
+
+        if not password or not confirm_password:
+            return Response({"message": "Password and confirm password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if password != confirm_password:
+            return Response({"message": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({"message": "Invalid reset link"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_token_generator.check_token(user, token):
+            return Response({"message": "Invalid or expired reset link"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(password)
+        user.save()
+
+        return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)

@@ -51,7 +51,7 @@ const ViewClassroom = () => {
   const fetchTeachers = async () => {
     try {
       const response = await getTeachers();
-      setTeachers(response.data);
+      setTeachers(response.data.teachers || []);
     } catch (error) {
       console.error("Error fetching teachers:", error);
       handleApiError(error, "Unable to fetch teachers.");
@@ -61,7 +61,7 @@ const ViewClassroom = () => {
   const fetchStudents = async () => {
     try {
       const response = await getStudents();
-      setStudents(response.data);
+      setStudents(response.data.data || []);
     } catch (error) {
       console.error("Error fetching students:", error);
       handleApiError(error, "Unable to fetch students.");
@@ -114,7 +114,7 @@ const ViewClassroom = () => {
       title: 'Teacher',
       key: 'teacher',
       render: (record) => {
-        const teacher = teachers.find(t => t.id === record.teacher);
+        const teacher = teachers?.find(t => t?.id === record?.teacher);
         return teacher ? `${teacher.first_name} ${teacher.last_name}` : 'Not assigned';
       }
     },
@@ -187,7 +187,7 @@ const ViewClassroom = () => {
           <Col span={8}>
             <Button
               type="primary"
-              onClick={() => navigate('/classrooms/add')}
+              onClick={() => navigate('/school-dashboard/classrooms/add')}
             >
               Add New Class
             </Button>

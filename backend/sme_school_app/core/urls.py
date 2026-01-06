@@ -2,10 +2,11 @@ from django.urls import path
 from .views import (
     CompanyAPIView, LoginAPIView, SchoolDashboardSummaryAPIView, SignupAPIView, StaffAPIView,
     StudentClassView, TeacherAPIView, TransactionAPIView, StudentAPIView, NotificationAPIView, FeeReminderNotificationAPIView,
-     NotificationAPIView, FeeReminderNotificationAPIView
+    ForgotPasswordAPIView, ResetPasswordAPIView
 )
 from .fees import FeeStructureAPIView, FeePaymentAPIView, FeeDiscountAPIView, FeeReportingAPIView
 from .documents import DocumentTemplateAPIView, DocumentTemplateDetailAPIView, TemplateCategoriesAPIView, GenerateDocumentAPIView, DownloadDocumentAPIView
+from .bulk_import import BulkImportStudentsAPIView, DownloadStudentTemplateAPIView
 
 urlpatterns = [
     path("signup/", SignupAPIView.as_view(), name="signup"),
@@ -13,6 +14,9 @@ urlpatterns = [
     path("companies", CompanyAPIView.as_view(), name="companies"),
     path("transactions", TransactionAPIView.as_view(), name="transactions"),
     path("students", StudentAPIView.as_view(), name="students"),
+    path("students/<int:pk>/", StudentAPIView.as_view(), name="student-detail"),
+    path("students/bulk-import/", BulkImportStudentsAPIView.as_view(), name="bulk-import-students"),
+    path("students/download-template/", DownloadStudentTemplateAPIView.as_view(), name="download-student-template"),
     path("classes", StudentClassView.as_view(), name="classes"),
     path('staff/', StaffAPIView.as_view(), name='staff-list-create'),
     path('staff/<int:pk>/', StaffAPIView.as_view(), name='staff-detail-update-delete'),
@@ -40,4 +44,8 @@ urlpatterns = [
     path("notifications/", NotificationAPIView.as_view(), name="notifications"),
     path("notifications/send/", NotificationAPIView.as_view(), name="send-notifications"),
     path("notifications/fee-reminders/", FeeReminderNotificationAPIView.as_view(), name="fee-reminders"),
+
+    # Password Reset URLs
+    path("forgot-password/", ForgotPasswordAPIView.as_view(), name="forgot-password"),
+    path("reset-password/<str:uidb64>/<str:token>/", ResetPasswordAPIView.as_view(), name="reset-password"),
 ]

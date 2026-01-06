@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Button, 
-  Card, 
-  Table, 
-  Tag, 
-  Space, 
-  Typography, 
-  Input, 
-  Row, 
-  Col, 
+import {
+  Button,
+  Card,
+  Table,
+  Tag,
+  Space,
+  Typography,
+  Input,
+  Row,
+  Col,
   message,
   Spin,
-  Avatar
+  Avatar,
+  Popconfirm
 } from 'antd';
-import { 
-  PlusOutlined, 
-  SearchOutlined, 
+import {
+  PlusOutlined,
+  SearchOutlined,
   EyeOutlined,
   EditOutlined,
   UserOutlined,
-  UploadOutlined
+  UploadOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { getStudents } from '../../api/auth';
+import { getStudents, deleteStudent } from '../../api/auth';
+import BulkImportModal from './BulkImportModal';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { Search } = Input;
 
 export default function StudentsListPage() {
@@ -37,6 +40,7 @@ export default function StudentsListPage() {
     pageSize: 10,
     total: 0
   });
+  const [bulkImportModalOpen, setBulkImportModalOpen] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -77,6 +81,21 @@ export default function StudentsListPage() {
     fetchStudents(pagination.current, pagination.pageSize, searchText);
   };
 
+  const handleBulkImportSuccess = () => {
+    setBulkImportModalOpen(false);
+    fetchStudents(pagination.current, pagination.pageSize, searchText);
+  };
+
+  const handleDeleteStudent = async (studentId, studentName) => {
+    try {
+      await deleteStudent(studentId);
+      message.success(`Student "${studentName}" deleted successfully`);
+      fetchStudents(pagination.current, pagination.pageSize, searchText);
+    } catch (error) {
+      message.error(`Failed to delete student: ${error.response?.data?.error || error.message}`);
+    }
+  };
+
   const columns = [
     {
       title: 'Profile',
@@ -86,23 +105,23 @@ export default function StudentsListPage() {
           src={record.profile_image} 
           icon={<UserOutlined />}
           size="large"
-          className="bg-primary"
+          className="bg-blue-500"
         />
       ),
-      width: 70,
+      width: 80,
     },
     {
       title: 'Admission No.',
       dataIndex: 'admission_number',
       key: 'admission_number',
-      render: (text) => text || '—',
+      render: (text) => <Text>{text || '—'}</Text>,
     },
     {
       title: 'Student Name',
       key: 'name',
       render: (_, record) => (
         <div>
-          <div className="font-medium text-gray-900">{`${record.first_name} ${record.last_name}`}</div>
+          <div className="font-semibold text-gray-900">{`${record.first_name} ${record.last_name}`}</div>
           <div className="text-xs text-gray-500">{record.parent_name}</div>
         </div>
       ),
@@ -112,7 +131,7 @@ export default function StudentsListPage() {
       key: 'class',
       render: (_, record) => 
         record.student_class 
-          ? `${record.student_class.grade_level} - Sec ${record.student_class.section}`
+          ? <Text>{`${record.student_class.name}`}</Text>
           : <Tag color="orange">Not Assigned</Tag>,
     },
     {
@@ -120,7 +139,7 @@ export default function StudentsListPage() {
       dataIndex: 'student_type',
       key: 'student_type',
       render: (type) => (
-        <Tag color={type === 'boarding' ? 'primary' : 'secondary'} className="font-medium">
+        <Tag color={type === 'boarding' ? 'blue' : 'cyan'}>
           {type === 'boarding' ? 'Boarding' : 'Day'}
         </Tag>
       ),
@@ -130,7 +149,7 @@ export default function StudentsListPage() {
       dataIndex: 'is_active',
       key: 'is_active',
       render: (isActive) => (
-        <Tag color={isActive ? 'secondary' : 'red'} className="font-medium">
+        <Tag color={isActive ? 'green' : 'red'}>
           {isActive ? 'Active' : 'Inactive'}
         </Tag>
       ),
@@ -139,64 +158,83 @@ export default function StudentsListPage() {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
-      width: 140,
+      width: 150,
       render: (_, record) => (
         <Space size="small">
-          <Button 
-            icon={<EyeOutlined />} 
-            size="small"
+          <Button
+            type="text"
+            icon={<EyeOutlined />}
             onClick={() => navigate(`/school-dashboard/students/${record.id}`)}
             title="View"
           />
-          <Button 
-            icon={<EditOutlined />} 
-            size="small"
+          <Button
+            type="text"
+            icon={<EditOutlined />}
             onClick={() => navigate(`/school-dashboard/students/${record.id}/edit`)}
             title="Edit"
           />
+          <Popconfirm
+            title={`Delete Student`}
+            description={
+              <>
+                Are you sure you want to delete "{record.first_name} {record.last_name}"?
+                <br />
+                This action cannot be undone.
+              </>
+            }
+            onConfirm={() => handleDeleteStudent(record.id, `${record.first_name} ${record.last_name}`)}
+            okText="Yes"
+            cancelText="Cancel"
+            okButtonProps={{ danger: true }}
+          >
+            <Button
+              type="text"
+              icon={<DeleteOutlined />}
+              danger
+              title="Delete"
+            />
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div>
-          <Title level={2} className="!mb-1 !text-2xl sm:!text-3xl text-gray-900">
-            Students Management
-          </Title>
-          <p className="text-gray-600">View and manage all students in your school</p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <Title level={2} className="!m-0 mb-2">Students Management</Title>
+            <Text type="secondary">View and manage all students in your school</Text>
+          </div>
+
+          <Space wrap size="middle">
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => setBulkImportModalOpen(true)}
+              size="large"
+            >
+              <span className="hidden sm:inline">Bulk Import</span>
+              <span className="sm:hidden">Import</span>
+            </Button>
+
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={() => navigate('/school-dashboard/add/students')}
+              size="large"
+            >
+              Add Student
+            </Button>
+          </Space>
         </div>
-
-        <Space wrap>
-          <Button
-            icon={<UploadOutlined />}
-            onClick={() => navigate('/school-dashboard/students/bulk-import')}
-            size="large"
-            className="flex items-center"
-          >
-            <span className="hidden sm:inline">Bulk Import</span>
-            <span className="sm:hidden">Import</span>
-          </Button>
-
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/school-dashboard/add/students')}
-            size="large"
-            className="flex items-center bg-primary hover:bg-primary-dark"
-          >
-            Add Student
-          </Button>
-        </Space>
       </div>
 
-      {/* Search & Stats */}
-      <Card className="mb-6 shadow-sm bg-white">
+      {/* Search Card */}
+      <Card className="mb-8 shadow-sm border-0">
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={16} lg={12}>
+          <Col xs={24} lg={14}>
             <Search
               placeholder="Search by name, admission no., or parent..."
               enterButton={<SearchOutlined />}
@@ -205,25 +243,22 @@ export default function StudentsListPage() {
               onChange={(e) => setSearchText(e.target.value)}
               value={searchText}
               allowClear
-              className="w-full"
             />
           </Col>
-          <Col xs={24} md={8} lg={12} className="text-right">
-            <Space>
-              <span className="text-gray-600 font-medium">
-                Total: <strong className="text-primary">{pagination.total}</strong> students
-              </span>
-            </Space>
+          <Col xs={24} lg={10} className="text-right">
+            <Text className="text-gray-600">
+              Total: <Text strong className="text-blue-600">{pagination.total}</Text> students
+            </Text>
           </Col>
         </Row>
       </Card>
 
-      {/* Table */}
-      <Card className="shadow-sm bg-white">
+      {/* Table Card */}
+      <Card className="shadow-sm border-0">
         <Spin spinning={loading}>
-          <Table 
-            columns={columns} 
-            dataSource={students} 
+          <Table
+            columns={columns}
+            dataSource={students}
             rowKey="id"
             pagination={{
               current: pagination.current,
@@ -232,15 +267,21 @@ export default function StudentsListPage() {
               showSizeChanger: true,
               showQuickJumper: true,
               pageSizeOptions: ['10', '20', '50'],
-              showTotal: (total, range) => 
+              showTotal: (total, range) =>
                 `${range[0]}–${range[1]} of ${total} students`,
             }}
             onChange={handleTableChange}
             scroll={{ x: 900 }}
-            className="overflow-x-auto"
           />
         </Spin>
       </Card>
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        open={bulkImportModalOpen}
+        onClose={() => setBulkImportModalOpen(false)}
+        onSuccess={handleBulkImportSuccess}
+      />
     </div>
   );
 }

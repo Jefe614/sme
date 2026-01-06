@@ -14,6 +14,16 @@ export const login = (data) =>
     headers: { "Content-Type": "application/json" },
   });
 
+export const forgotPassword = (data) =>
+  axios.post(`${API_PUBLIC_BASE}/forgot-password/`, data, {
+    headers: { "Content-Type": "application/json" },
+  });
+
+export const resetPassword = (uid, token, data) =>
+  axios.post(`${API_PUBLIC_BASE}/reset-password/${uid}/${token}/`, data, {
+    headers: { "Content-Type": "application/json" },
+  });
+
 // ✅ Tenant endpoints (auto pick schema from apiClient)
 
 // Teachers
@@ -29,6 +39,7 @@ export const updateClassStatus = (classId, isActive) =>
 
 // Students
 export const getStudents = () => api.get("/students");
+export const getStudent = (studentId) => api.get(`/students/${studentId}/`);
 export const getClassStudents = (classId) => api.get(`/students/?class_id=${classId}`);
 export const createStudent = (data) => api.post("/students", data);
 export const updateStudent = (studentId, data) => api.patch(`/students/${studentId}/`, data);
@@ -49,6 +60,11 @@ export const createSubject = (data) => api.post("/subjects/", data);
 export const bulkImportStudents = (formData) =>
   api.post("/students/bulk-import/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+  });
+
+export const downloadStudentTemplate = () =>
+  api.get("/students/download-template/", {
+    responseType: 'blob'
   });
 
 // Fee Management

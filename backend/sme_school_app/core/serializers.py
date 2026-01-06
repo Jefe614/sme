@@ -29,9 +29,18 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         fields = '__all__'
 
+
+class StudentClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentClass
+        fields = [
+            'id', 'name'
+        ]
+
 class StudentSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='company.name', read_only=True)
     age = serializers.SerializerMethodField()
+    student_class = StudentClassSerializer(read_only=True)
     
     class Meta:
         model = Student
