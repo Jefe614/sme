@@ -34,6 +34,12 @@ class BulkImportStudentsAPIView(APIView):
             # Read Excel file
             df = pd.read_excel(file, engine='openpyxl')
 
+            # Check import limit (max 1000 students)
+            if len(df) > 1000:
+                return Response({
+                    "error": f"Import limit exceeded. Maximum 1000 students allowed per import, but file contains {len(df)} students."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             # Validate required columns
             required_columns = [
                 'first_name*', 'last_name*', 'gender*', 'date_of_birth*',
@@ -72,12 +78,46 @@ class BulkImportStudentsAPIView(APIView):
 
             # Process data
             success_count = 0
+            skipped_count = 0
             errors = []
             imported_students = []
+            skipped_students = []
 
             with transaction.atomic():
                 for index, row in df.iterrows():
                     try:
+                        first_name = str(row.get('first_name', '')).strip()
+                        last_name = str(row.get('last_name', '')).strip()
+                        admission_number = str(row.get('admission_number', '')).strip() or None
+
+                        # Check if student already exists
+                        existing_student = None
+
+                        # Check by admission number first (if provided)
+                        if admission_number:
+                            existing_student = Student.objects.filter(
+                                company=company,
+                                admission_number=admission_number
+                            ).first()
+
+                        # If no admission number or not found by admission number, check by name
+                        if not existing_student:
+                            existing_student = Student.objects.filter(
+                                company=company,
+                                first_name__iexact=first_name,
+                                last_name__iexact=last_name
+                            ).first()
+
+                        # If student exists, skip this row
+                        if existing_student:
+                            skipped_students.append({
+                                'name': f"{first_name} {last_name}",
+                                'admission_number': admission_number,
+                                'reason': 'Student already exists'
+                            })
+                            skipped_count += 1
+                            continue
+
                         # Validate and get student_class
                         class_name = str(row.get('student_class', '')).strip()
                         if not class_name:
@@ -113,9 +153,9 @@ class BulkImportStudentsAPIView(APIView):
                         # Create student
                         student = Student(
                             company=company,
-                            first_name=str(row.get('first_name', '')).strip(),
-                            last_name=str(row.get('last_name', '')).strip(),
-                            admission_number=str(row.get('admission_number', '')).strip() or None,
+                            first_name=first_name,
+                            last_name=last_name,
+                            admission_number=admission_number,
                             gender=str(row.get('gender', '')).strip().lower(),
                             date_of_birth=date_of_birth,
                             student_type=str(row.get('student_type', 'day')).strip().lower(),
@@ -146,11 +186,13 @@ class BulkImportStudentsAPIView(APIView):
                         errors.append(f"Row {index + 2}: {str(e)}")
 
             return Response({
-                "message": f"Successfully imported {success_count} students",
+                "message": f"Import completed: {success_count} imported, {skipped_count} skipped",
                 "success_count": success_count,
+                "skipped_count": skipped_count,
                 "error_count": len(errors),
                 "errors": errors[:50],  # Limit errors shown
-                "imported_students": imported_students
+                "imported_students": imported_students,
+                "skipped_students": skipped_students[:50]  # Limit skipped shown
             })
 
         except Exception as e:

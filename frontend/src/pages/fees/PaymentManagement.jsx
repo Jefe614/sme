@@ -18,6 +18,7 @@ import {
   DatePicker,
   Switch,
   Descriptions,
+  Divider,
 } from 'antd';
 import {
   PlusOutlined,
@@ -26,9 +27,13 @@ import {
   DeleteOutlined,
   ArrowLeftOutlined,
   EyeOutlined,
+  PrinterOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
+import { useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
 import {
   getFeePayments,
   createFeePayment,
@@ -44,6 +49,7 @@ const { Option } = Select;
 
 export default function PaymentManagement() {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -53,7 +59,9 @@ export default function PaymentManagement() {
     total: 0
   });
   const [modalVisible, setModalVisible] = useState(false);
+  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
+  const [currentReceipt, setCurrentReceipt] = useState(null);
   const [form] = Form.useForm();
   const [students, setStudents] = useState([]);
   const [feeStructures, setFeeStructures] = useState([]);
@@ -146,20 +154,60 @@ export default function PaymentManagement() {
         payment_date: values.payment_date?.format('YYYY-MM-DD') || new Date().toISOString().split('T')[0],
       };
 
+      let response;
       if (editingPayment) {
-        await updateFeePayment(editingPayment.id, data);
+        response = await updateFeePayment(editingPayment.id, data);
         message.success('Fee payment updated successfully');
       } else {
-        await createFeePayment(data);
-        console.log('Fee payment created successfully');  
+        response = await createFeePayment(data);
+        console.log('Fee payment created successfully');
         message.success('Fee payment recorded successfully');
       }
 
       setModalVisible(false);
       fetchPayments(pagination.current, pagination.pageSize, searchText);
+
+      // Show receipt for new payments
+      if (!editingPayment && response?.data) {
+        const paymentData = response.data;
+        // Find student and fee structure details
+        const student = students.find(s => s.id === paymentData.student);
+        const feeStructure = feeStructures.find(fs => fs.id === paymentData.fee_structure);
+
+        setCurrentReceipt({
+          ...paymentData,
+          student_name: student ? `${student.first_name} ${student.last_name}` : 'Unknown Student',
+          admission_number: student?.admission_number || '',
+          class_name: student?.student_class ? `${student.student_class.grade_level} ${student.student_class.section}` : '',
+          fee_structure_name: feeStructure?.name || 'General Fee',
+          company_name: user?.company?.name || 'School Management System',
+        });
+        setReceiptModalVisible(true);
+      }
     } catch (error) {
+      console.error('Failed to save fee payment:', error);
       message.error('Failed to save fee payment');
     }
+  };
+
+  const handleViewReceipt = (record) => {
+    // Find student and fee structure details for existing payments
+    const student = students.find(s => s.id === record.student);
+    const feeStructure = feeStructures.find(fs => fs.id === record.fee_structure);
+
+    setCurrentReceipt({
+      ...record,
+      student_name: record.student_name || (student ? `${student.first_name} ${student.last_name}` : 'Unknown Student'),
+      admission_number: record.admission_number || student?.admission_number || '',
+      class_name: record.class_name || (student?.student_class ? `${student.student_class.grade_level} ${student.student_class.section}` : ''),
+      fee_structure_name: feeStructure?.name || 'General Fee',
+      company_name: user?.company?.name || 'School Management System',
+    });
+    setReceiptModalVisible(true);
+  };
+
+  const handlePrintReceipt = () => {
+    window.print();
   };
 
   const columns = [
@@ -231,7 +279,7 @@ export default function PaymentManagement() {
           <Button
             icon={<EyeOutlined />}
             size="small"
-            onClick={() => message.info('Receipt viewing not implemented yet')}
+            onClick={() => handleViewReceipt(record)}
           />
           <Button
             icon={<EditOutlined />}
@@ -455,6 +503,200 @@ export default function PaymentManagement() {
             </Space>
           </div>
         </Form>
+      </Modal>
+
+      {/* Receipt Modal */}
+      <Modal
+        title={
+          <div className="text-center">
+            <Title level={3} className="!mb-0">Payment Receipt</Title>
+            <div className="text-gray-500 text-sm">Official School Receipt</div>
+          </div>
+        }
+        open={receiptModalVisible}
+        onCancel={() => setReceiptModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setReceiptModalVisible(false)}>
+            Close
+          </Button>,
+          <Button
+            key="print"
+            type="primary"
+            icon={<PrinterOutlined />}
+            onClick={handlePrintReceipt}
+          >
+            Print Receipt
+          </Button>,
+        ]}
+        width={800}
+        className="receipt-modal"
+      >
+        {currentReceipt && (
+          <div className="receipt-container bg-white p-8 border-2 border-gray-300 rounded-lg">
+            {/* School Header */}
+            <div className="text-center mb-6 border-b-2 border-gray-300 pb-4">
+              <div className="text-2xl font-bold text-blue-800 mb-2">
+                {currentReceipt.company_name}
+              </div>
+              <div className="text-sm text-gray-600 mb-1">
+                School Management System
+              </div>
+              <div className="text-xs text-gray-500">
+                Nairobi, Kenya | Tel: +254 XXX XXX XXX
+              </div>
+            </div>
+
+            {/* Receipt Title */}
+            <div className="text-center mb-6">
+              <div className="text-xl font-bold text-gray-800 mb-2">
+                OFFICIAL RECEIPT
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="text-sm">
+                  <strong>Receipt No:</strong> {currentReceipt.receipt_number}
+                </div>
+                <div className="text-sm">
+                  <strong>Date:</strong> {moment(currentReceipt.payment_date).format('DD/MM/YYYY')}
+                </div>
+              </div>
+            </div>
+
+            {/* Student Information */}
+            <div className="mb-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <Title level={5} className="!mb-3">Student Information</Title>
+                <Row gutter={[16, 8]}>
+                  <Col xs={12}>
+                    <div className="text-sm">
+                      <strong>Name:</strong> {currentReceipt.student_name}
+                    </div>
+                  </Col>
+                  <Col xs={12}>
+                    <div className="text-sm">
+                      <strong>Admission No:</strong> {currentReceipt.admission_number}
+                    </div>
+                  </Col>
+                  <Col xs={12}>
+                    <div className="text-sm">
+                      <strong>Class:</strong> {currentReceipt.class_name || 'N/A'}
+                    </div>
+                  </Col>
+                  <Col xs={12}>
+                    <div className="text-sm">
+                      <strong>Fee Structure:</strong> {currentReceipt.fee_structure_name}
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+            </div>
+
+            {/* Payment Details */}
+            <div className="mb-6">
+              <Title level={5} className="!mb-3">Payment Details</Title>
+              <div className="border border-gray-300 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="text-left p-3 font-semibold border-r">Description</th>
+                      <th className="text-right p-3 font-semibold">Amount (KES)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t">
+                      <td className="p-3 border-r">
+                        {currentReceipt.fee_structure_name} - {currentReceipt.is_installment ? 'Installment' : 'Full'} Payment
+                        {currentReceipt.transaction_id && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Transaction ID: {currentReceipt.transaction_id}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3 text-right font-semibold">
+                        {currentReceipt.amount_paid?.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                    {currentReceipt.due_amount > 0 && (
+                      <tr className="border-t bg-gray-50">
+                        <td className="p-3 border-r font-medium">Balance</td>
+                        <td className="p-3 text-right">
+                          {(currentReceipt.due_amount - currentReceipt.amount_paid)?.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    )}
+                    <tr className="border-t bg-blue-50">
+                      <td className="p-3 border-r font-bold text-blue-800">Total Paid</td>
+                      <td className="p-3 text-right font-bold text-blue-800 text-lg">
+                        {currentReceipt.amount_paid?.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Payment Information */}
+            <Row gutter={[16, 16]} className="mb-6">
+              <Col xs={12}>
+                <div className="text-sm">
+                  <strong>Payment Method:</strong> {currentReceipt.payment_method?.replace('_', ' ').toUpperCase()}
+                </div>
+              </Col>
+              <Col xs={12}>
+                <div className="text-sm">
+                  <strong>Payment Status:</strong>
+                  <Tag color={currentReceipt.payment_status === 'completed' ? 'green' : 'orange'} className="ml-2">
+                    {currentReceipt.payment_status?.toUpperCase()}
+                  </Tag>
+                </div>
+              </Col>
+              {currentReceipt.paid_by && (
+                <Col xs={12}>
+                  <div className="text-sm">
+                    <strong>Paid By:</strong> {currentReceipt.paid_by}
+                  </div>
+                </Col>
+              )}
+              {currentReceipt.balance !== undefined && (
+                <Col xs={12}>
+                  <div className="text-sm">
+                    <strong>Outstanding Balance:</strong> KES {currentReceipt.balance?.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+                  </div>
+                </Col>
+              )}
+            </Row>
+
+            {currentReceipt.notes && (
+              <div className="mb-6">
+                <div className="text-sm">
+                  <strong>Notes:</strong> {currentReceipt.notes}
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <Divider />
+            <div className="flex justify-between items-end">
+              <div className="text-center flex-1">
+                <div className="mb-2">
+                  <CheckCircleOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                </div>
+                <div className="text-sm font-semibold">Payment Received</div>
+                <div className="text-xs text-gray-500">
+                  This receipt is computer generated and invalid without signature/stamp
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="border-t border-gray-400 pt-2 min-w-48">
+                  <div className="text-sm font-semibold">Authorized Signature/stamp</div>
+                  <div className="text-xs text-gray-500 mt-6">___________________________</div>
+                  <div className="text-xs text-gray-500">Accountant/Bursar</div>
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+        )}
       </Modal>
     </div>
   );

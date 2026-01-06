@@ -8,7 +8,7 @@
   --color-secondary-dark: #25a25a;
   --color-secondary-light: #6ee7b7;
 }
-/* 
+/*
 @layer base {
   :root {
     --bg-primary: #ffffff;
@@ -23,3 +23,57 @@
     color: var(--text-primary);
   }
 } */
+
+/* Print styles for receipts */
+@media print {
+  .receipt-modal .ant-modal-mask {
+    display: none !important;
+  }
+
+  .receipt-modal .ant-modal-wrap {
+    display: block !important;
+  }
+
+  .receipt-modal .ant-modal {
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+
+  .receipt-modal .ant-modal-content {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .receipt-modal .ant-modal-header {
+    display: none !important;
+  }
+
+  .receipt-modal .ant-modal-footer {
+    display: none !important;
+  }
+
+  .receipt-modal .ant-modal-body {
+    padding: 0 !important;
+  }
+
+  .receipt-container {
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    page-break-inside: avoid;
+  }
+
+  /* Hide buttons and other UI elements during print */
+  button, .ant-btn {
+    display: none !important;
+  }
+
+  /* Ensure proper page breaks */
+  .receipt-container {
+    page-break-before: always;
+    page-break-after: always;
+  }
+}

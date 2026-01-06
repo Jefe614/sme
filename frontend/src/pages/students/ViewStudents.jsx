@@ -50,7 +50,7 @@ export default function StudentsListPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page: page,
+        current: page,
         pageSize: pageSize,
       });
       if (query) params.append('q', query);
@@ -75,6 +75,19 @@ export default function StudentsListPage() {
   const handleSearch = (value) => {
     setSearchText(value);
     fetchStudents(1, pagination.pageSize, value);
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchText(value);
+    // Debounced search - search as user types
+    if (value === '') {
+      // If search is cleared, fetch all students
+      fetchStudents(1, pagination.pageSize, '');
+    } else if (value.length >= 2) {
+      // Search when user types at least 2 characters
+      fetchStudents(1, pagination.pageSize, value);
+    }
   };
 
   const handleTableChange = (pagination) => {
@@ -240,7 +253,7 @@ export default function StudentsListPage() {
               enterButton={<SearchOutlined />}
               size="large"
               onSearch={handleSearch}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={handleSearchInputChange}
               value={searchText}
               allowClear
             />

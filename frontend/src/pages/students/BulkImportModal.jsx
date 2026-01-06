@@ -87,6 +87,8 @@ export default function BulkImportModal({ open, onClose, onSuccess }) {
       if (response.data.success_count > 0) {
         message.success(`Successfully imported ${response.data.success_count} students!`);
         if (onSuccess) onSuccess();
+      } else if (response.data.success_count === 0 && response.data.skipped_count > 0) {
+        message.info(`All ${response.data.skipped_count} students were skipped (already exist)`);
       }
 
     } catch (error) {
@@ -149,7 +151,8 @@ export default function BulkImportModal({ open, onClose, onSuccess }) {
               <li>Download the Excel template to see the required format</li>
               <li>Fill in student information in the Excel file</li>
               <li>Columns marked with * are required</li>
-              <li>Upload the completed Excel file</li>
+              <li>Existing students will be skipped (not duplicated)</li>
+              <li>Maximum 1000 students per import</li>
               <li>Review the import results before closing</li>
             </ul>
           </div>
@@ -201,22 +204,35 @@ export default function BulkImportModal({ open, onClose, onSuccess }) {
           <div className="space-y-4">
             <Title level={5}>Import Results</Title>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="flex items-center gap-2">
                   <CheckCircleOutlined className="text-green-600" />
-                  <Text strong className="text-green-600">Success</Text>
+                  <Text strong className="text-green-600">Imported</Text>
                 </div>
                 <Title level={3} className="text-green-600 m-0">
                   {importResult.success_count}
                 </Title>
-                <Text>Students imported</Text>
+                <Text>Students added</Text>
               </div>
+
+              {importResult.skipped_count > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <ExclamationCircleOutlined className="text-blue-600" />
+                    <Text strong className="text-blue-600">Skipped</Text>
+                  </div>
+                  <Title level={3} className="text-blue-600 m-0">
+                    {importResult.skipped_count}
+                  </Title>
+                  <Text>Already exist</Text>
+                </div>
+              )}
 
               {importResult.error_count > 0 && (
                 <div className="bg-red-50 p-4 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <ExclamationCircleOutlined className="text-red-600" />
+                    <CloseCircleOutlined className="text-red-600" />
                     <Text strong className="text-red-600">Errors</Text>
                   </div>
                   <Title level={3} className="text-red-600 m-0">
@@ -239,6 +255,23 @@ export default function BulkImportModal({ open, onClose, onSuccess }) {
                   ))}
                   {importResult.imported_students.length > 10 && (
                     <Text type="secondary">... and {importResult.imported_students.length - 10} more</Text>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Skipped Details */}
+            {importResult.skipped_students && importResult.skipped_students.length > 0 && (
+              <div>
+                <Text strong>Skipped Students (Already Exist):</Text>
+                <div className="mt-2 max-h-32 overflow-y-auto">
+                  {importResult.skipped_students.slice(0, 10).map((student, index) => (
+                    <Tag key={index} color="blue" className="mr-2 mb-1">
+                      {student.name} ({student.admission_number || 'No ID'})
+                    </Tag>
+                  ))}
+                  {importResult.skipped_students.length > 10 && (
+                    <Text type="secondary">... and {importResult.skipped_students.length - 10} more</Text>
                   )}
                 </div>
               </div>
