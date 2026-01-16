@@ -7,7 +7,12 @@ from .views import (
 from .fees import FeeStructureAPIView, FeePaymentAPIView, FeeDiscountAPIView, FeeReportingAPIView
 from .documents import DocumentTemplateAPIView, DocumentTemplateDetailAPIView, TemplateCategoriesAPIView, GenerateDocumentAPIView, DownloadDocumentAPIView
 from .bulk_import import BulkImportStudentsAPIView, DownloadStudentTemplateAPIView
-from .academic import AcademicYearAPIView, TermAPIView, ClassSubjectAssignmentAPIView
+from .academic import AcademicYearAPIView, TermAPIView, ClassSubjectAssignmentAPIView, SubjectAPIView
+from .exams import (
+    GradingSystemAPIView, ExamAPIView, ExamLockAPIView, ExamMarkAPIView,
+    BulkExamMarkAPIView, StudentReportCardAPIView, ClassPerformanceAPIView,
+    ExamStatisticsAPIView
+)
 
 urlpatterns = [
     path("signup/", SignupAPIView.as_view(), name="signup"),
@@ -30,6 +35,8 @@ urlpatterns = [
     path("academic-years/<int:pk>/", AcademicYearAPIView.as_view(), name="academic-year-detail"),
     path("terms/", TermAPIView.as_view(), name="terms"),
     path("terms/<int:pk>/", TermAPIView.as_view(), name="term-detail"),
+    path("subjects/", SubjectAPIView.as_view(), name="subjects"),
+    path("subjects/<int:pk>/", SubjectAPIView.as_view(), name="subject-detail"),
     path("class-subject-assignments/", ClassSubjectAssignmentAPIView.as_view(), name="class-subject-assignments"),
     path("class-subject-assignments/<int:pk>/", ClassSubjectAssignmentAPIView.as_view(), name="class-subject-assignment-detail"),
 
@@ -53,6 +60,21 @@ urlpatterns = [
     path("notifications/", NotificationAPIView.as_view(), name="notifications"),
     path("notifications/send/", NotificationAPIView.as_view(), name="send-notifications"),
     path("notifications/fee-reminders/", FeeReminderNotificationAPIView.as_view(), name="fee-reminders"),
+
+    # Exam Management URLs
+    path("grading-systems/", GradingSystemAPIView.as_view(), name="grading-systems"),
+    path("grading-systems/<int:pk>/", GradingSystemAPIView.as_view(), name="grading-system-detail"),
+    path("exams/", ExamAPIView.as_view(), name="exams"),
+    path("exams/<int:pk>/", ExamAPIView.as_view(), name="exam-detail"),
+    path("exams/<int:pk>/lock/", ExamLockAPIView.as_view(), name="exam-lock"),
+    path("exam-marks/", ExamMarkAPIView.as_view(), name="exam-marks"),
+    path("exam-marks/<int:pk>/", ExamMarkAPIView.as_view(), name="exam-mark-detail"),
+    path("exam-marks/bulk/", BulkExamMarkAPIView.as_view(), name="bulk-exam-marks"),
+
+    # Reports and Analytics URLs
+    path("reports/student-report-card/", StudentReportCardAPIView.as_view(), name="student-report-card"),
+    path("reports/class-performance/", ClassPerformanceAPIView.as_view(), name="class-performance"),
+    path("reports/exam-statistics/", ExamStatisticsAPIView.as_view(), name="exam-statistics"),
 
     # Password Reset URLs
     path("forgot-password/", ForgotPasswordAPIView.as_view(), name="forgot-password"),

@@ -188,6 +188,9 @@ class Student(models.Model):
             self.admission_number = f"STU{new_number:06d}"
         super().save(*args, **kwargs)
     
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.admission_number})"
 
@@ -654,7 +657,7 @@ class Subject(models.Model):
     description = models.TextField(blank=True, null=True)
     
     # Subject Details
-    grade_levels = models.CharField(max_length=200, help_text="Comma-separated grade levels this subject is taught in")
+    grade_levels = models.JSONField(default=list, help_text="List of grade levels this subject is taught in")
     credit_hours = models.PositiveIntegerField(default=1)
     is_compulsory = models.BooleanField(default=False)
     # Resources
@@ -864,3 +867,222 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.notification_type.upper()} to {self.parent or self.recipient_phone or self.recipient_email} - {self.status}"
+
+
+# Exams & Results Models
+
+class GradingSystem(models.Model):
+    GRADING_TYPES = (
+        ('8-4-4', '8-4-4 System'),
+        ('cbc', 'Competency Based Curriculum (CBC)'),
+        ('custom', 'Custom Grading'),
+    )
+
+    company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
+    name = models.CharField(max_length=100, help_text="e.g., KCSE Grading, CBC Primary")
+    grading_type = models.CharField(max_length=10, choices=GRADING_TYPES, default='8-4-4')
+
+    # Grading scales stored as JSON
+    grading_scale = models.JSONField(default=list, help_text="""
+    For 8-4-4: [{"min_mark": 80, "max_mark": 100, "grade": "A", "points": 12}, ...]
+    For CBC: [{"level": "Exceeding Expectations", "description": "..."}, ...]
+    """)
+
+    is_default = models.BooleanField(default=False, help_text="Default grading system for this school")
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Grading System'
+        verbose_name_plural = 'Grading Systems'
+        db_table = 'grading_systems'
+        unique_together = ['company', 'name']
+
+    def clean(self):
+        if self.is_default:
+            # Ensure only one default grading system per company
+            default_systems = GradingSystem.objects.filter(
+                company=self.company,
+                is_default=True
+            ).exclude(pk=self.pk)
+            if default_systems.exists():
+                raise ValidationError("Only one grading system can be default per school.")
+
+    def __str__(self):
+        return f"{self.name} ({self.grading_type}) - {self.company.name}"
+
+
+class Exam(models.Model):
+    EXAM_TYPES = (
+        ('cat1', 'CAT 1'),
+        ('cat2', 'CAT 2'),
+        ('mid_term', 'Mid Term'),
+        ('end_term', 'End Term'),
+        ('custom', 'Custom Exam'),
+    )
+
+    company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='exams')
+    term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name='exams')
+
+    name = models.CharField(max_length=100, help_text="e.g., End Term Exam, CAT 1")
+    exam_type = models.CharField(max_length=20, choices=EXAM_TYPES, default='end_term')
+
+    # Class assignment - can be specific class or whole school
+    student_class = models.ForeignKey(
+        StudentClass,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name='exams',
+        help_text="Specific class for this exam, leave empty for whole school"
+    )
+
+    # Exam configuration
+    total_marks = models.PositiveIntegerField(default=100)
+    weight_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=100.00,
+        help_text="Weight of this exam in overall term grade (e.g., 30 for CAT, 70 for End Term)"
+    )
+
+    # Dates
+    exam_date = models.DateField(blank=True, null=True)
+    results_publish_date = models.DateField(blank=True, null=True)
+
+    # Status
+    is_locked = models.BooleanField(default=False, help_text="Lock exam after results are published")
+    is_active = models.BooleanField(default=True)
+
+    # Metadata
+    created_by = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Exam'
+        verbose_name_plural = 'Exams'
+        db_table = 'exams'
+        ordering = ['-exam_date', 'name']
+
+    def clean(self):
+        # Validate weight percentage
+        if self.weight_percentage < 0 or self.weight_percentage > 100:
+            raise ValidationError("Weight percentage must be between 0 and 100.")
+
+        # Ensure exam belongs to same company as academic year and term
+        if self.academic_year.company != self.company:
+            raise ValidationError("Academic year must belong to the same school.")
+        if self.term.academic_year != self.academic_year:
+            raise ValidationError("Term must belong to the selected academic year.")
+
+        # Validate class belongs to same company
+        if self.student_class and self.student_class.company != self.company:
+            raise ValidationError("Class must belong to the same school.")
+
+    def __str__(self):
+        class_info = f" - {self.student_class}" if self.student_class else " - Whole School"
+        return f"{self.name} ({self.term.name}, {self.academic_year.name}){class_info}"
+
+
+class ExamMark(models.Model):
+    company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='marks')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='exam_marks')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='exam_marks')
+
+    # Marks/Grades - flexible for different systems
+    marks_obtained = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Numerical marks obtained (for 8-4-4 system)"
+    )
+
+    # For CBC system
+    cbc_level = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="CBC level: Exceeding Expectations, Meeting Expectations, etc."
+    )
+
+    # Auto-calculated fields
+    grade = models.CharField(max_length=10, blank=True, null=True, help_text="Calculated grade (A, B+, etc.)")
+    points = models.PositiveIntegerField(blank=True, null=True, help_text="Grade points for ranking")
+
+    # Comments and validation
+    teacher_remarks = models.TextField(blank=True, null=True)
+    is_absent = models.BooleanField(default=False, help_text="Student was absent for this exam")
+
+    # Metadata
+    entered_by = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True)
+    entered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Exam Mark'
+        verbose_name_plural = 'Exam Marks'
+        db_table = 'exam_marks'
+        unique_together = ['exam', 'student', 'subject']
+
+    def clean(self):
+        # Ensure all entities belong to same company
+        if self.exam.company != self.company:
+            raise ValidationError("Exam must belong to the same school.")
+        if self.student.company != self.company:
+            raise ValidationError("Student must belong to the same school.")
+        if self.subject.company != self.company:
+            raise ValidationError("Subject must belong to the same school.")
+
+        # Validate marks don't exceed total marks
+        if self.marks_obtained and self.marks_obtained > self.exam.total_marks:
+            raise ValidationError(f"Marks obtained cannot exceed total marks ({self.exam.total_marks}).")
+
+        # Ensure student is in the exam's class (if exam is class-specific)
+        if self.exam.student_class and self.student.student_class != self.exam.student_class:
+            raise ValidationError("Student must be in the exam's assigned class.")
+
+        # Validate subject is assigned to student's class
+        if not ClassSubjectAssignment.objects.filter(
+            student_class=self.student.student_class,
+            subject=self.subject,
+            academic_year=self.exam.academic_year
+        ).exists():
+            raise ValidationError("Subject is not assigned to student's class for this academic year.")
+
+    def save(self, *args, **kwargs):
+        # Auto-calculate grade and points based on grading system
+        if self.marks_obtained and not self.is_absent:
+            self._calculate_grade_and_points()
+        super().save(*args, **kwargs)
+
+    def _calculate_grade_and_points(self):
+        """Calculate grade and points based on school's grading system"""
+        try:
+            # Get default grading system for the school
+            grading_system = GradingSystem.objects.filter(
+                company=self.exam.company,
+                is_default=True,
+                is_active=True
+            ).first()
+
+            if grading_system and grading_system.grading_type == '8-4-4':
+                for grade_rule in grading_system.grading_scale:
+                    if (grade_rule['min_mark'] <= float(self.marks_obtained) <= grade_rule['max_mark']):
+                        self.grade = grade_rule['grade']
+                        self.points = grade_rule['points']
+                        break
+
+        except Exception as e:
+            # Log error but don't fail save
+            import logging
+            logging.error(f"Error calculating grade for exam mark {self.pk}: {str(e)}")
+
+    def __str__(self):
+        return f"{self.student} - {self.subject} - {self.exam} ({self.marks_obtained or self.cbc_level})"

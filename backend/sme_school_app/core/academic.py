@@ -11,7 +11,7 @@ from datetime import datetime
 
 from tenants.models import Company
 from .models import AcademicYear, Term, ClassSubjectAssignment, StudentClass, Subject, Staff
-from .serializers import AcademicYearSerializer, TermSerializer, ClassSubjectAssignmentSerializer
+from .serializers import AcademicYearSerializer, SubjectSerializer, TermSerializer, ClassSubjectAssignmentSerializer
 
 
 # -------------------- Academic Year Management --------------------
@@ -598,5 +598,158 @@ class ClassSubjectAssignmentAPIView(APIView):
 
         except ClassSubjectAssignment.DoesNotExist:
             return Response({"error": "Assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# -------------------- Subject Management --------------------
+class SubjectAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None):
+        """Get subjects for the school"""
+        company = request.company
+
+        if not company or company.company_type != "SCHOOL":
+            return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if pk:
+            try:
+                subject = Subject.objects.get(id=pk, company=company)
+                serializer = SubjectSerializer(subject)
+                return Response({
+                    "message": "Subject retrieved successfully",
+                    "subject": serializer.data
+                })
+            except Subject.DoesNotExist:
+                return Response({"error": "Subject not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get all subjects
+        subjects = Subject.objects.filter(company=company)
+
+        # Search filter
+        q = request.query_params.get("q")
+        if q:
+            subjects = subjects.filter(
+                Q(name__icontains=q) | Q(code__icontains=q)
+            )
+
+        # Filter by category
+        category = request.query_params.get('category')
+        if category:
+            subjects = subjects.filter(category=category)
+
+        # Filter by active status
+        is_active = request.query_params.get('is_active')
+        if is_active is not None:
+            if is_active.lower() == 'true':
+                subjects = subjects.filter(is_active=True)
+            elif is_active.lower() == 'false':
+                subjects = subjects.filter(is_active=False)
+
+        # Order by name
+        subjects = subjects.order_by('name')
+
+        # Pagination
+        page_size = request.query_params.get("pageSize", 10)
+        page_number = request.query_params.get("current", 1)
+
+        try:
+            page_size = int(page_size)
+            page_number = int(page_number)
+        except (TypeError, ValueError):
+            page_size = 10
+            page_number = 1
+
+        paginator = Paginator(subjects, page_size)
+
+        try:
+            page = paginator.page(page_number)
+        except EmptyPage:
+            page = paginator.page(1)
+            page_number = 1
+
+        return Response({
+            "message": "Subjects fetched successfully",
+            "data": SubjectSerializer(page, many=True).data,
+            "pagination": {
+                "current": page_number,
+                "pageSize": page_size,
+                "total": paginator.count,
+                "totalPages": paginator.num_pages,
+            },
+        })
+
+    def post(self, request):
+        """Create a new subject"""
+        company = request.company
+
+        if not company or company.company_type != "SCHOOL":
+            return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Add company to the data
+        data = request.data.copy()
+        data['company'] = company.id
+
+        serializer = SubjectSerializer(data=data)
+        if serializer.is_valid():
+            try:
+                subject = serializer.save(company=company)
+                return Response({
+                    "message": "Subject created successfully",
+                    "subject": SubjectSerializer(subject).data
+                }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk=None):
+        """Update a subject"""
+        company = request.company
+
+        if not company or company.company_type != "SCHOOL":
+            return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            subject = Subject.objects.get(id=pk, company=company)
+        except Subject.DoesNotExist:
+            return Response({"error": "Subject not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Add company to the data
+        data = request.data.copy()
+        data['company'] = company.id
+
+        serializer = SubjectSerializer(subject, data=data, partial=True)
+        if serializer.is_valid():
+            try:
+                subject = serializer.save()
+                return Response({
+                    "message": "Subject updated successfully",
+                    "subject": SubjectSerializer(subject).data
+                })
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk=None):
+        """Delete a subject"""
+        company = request.company
+
+        if not company or company.company_type != "SCHOOL":
+            return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            subject = Subject.objects.get(id=pk, company=company)
+            name = subject.name
+            subject.delete()
+
+            return Response({
+                "message": f"Subject '{name}' deleted successfully"
+            })
+
+        except Subject.DoesNotExist:
+            return Response({"error": "Subject not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

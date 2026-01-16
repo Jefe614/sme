@@ -278,6 +278,70 @@ export const getClassAssignments = async (classId, academicYearId) => {
   }
 };
 
+// ==================== SUBJECT API FUNCTIONS ====================
+
+export const fetchSubjects = async (params = {}) => {
+  try {
+    const response = await apiClient.get('/subjects/', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching subjects:', error);
+    throw error;
+  }
+};
+
+export const createSubject = async (subjectData) => {
+  try {
+    const response = await apiClient.post('/subjects/', subjectData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating subject:', error);
+    throw error;
+  }
+};
+
+export const updateSubject = async (subjectId, subjectData) => {
+  try {
+    const response = await apiClient.put(`/subjects/${subjectId}/`, subjectData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating subject:', error);
+    throw error;
+  }
+};
+
+export const deleteSubject = async (subjectId) => {
+  try {
+    const response = await apiClient.delete(`/subjects/${subjectId}/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting subject:', error);
+    throw error;
+  }
+};
+
+export const fetchSubjectById = async (subjectId) => {
+  try {
+    const response = await apiClient.get(`/subjects/${subjectId}/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching subject:', error);
+    throw error;
+  }
+};
+
+// ==================== CLASS API FUNCTIONS ====================
+
+export const fetchClasses = async (params = {}) => {
+  try {
+    const response = await apiClient.get('/classes/', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching classes:', error);
+    throw error;
+  }
+};
+
 // Bulk create assignments
 export const bulkCreateAssignments = async (assignments) => {
   const results = [];

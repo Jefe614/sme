@@ -123,6 +123,9 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 
 ALLOWED_HOSTS = ["*"]
 
+# Disable APPEND_SLASH to prevent POST redirect issues
+APPEND_SLASH = False
+
 
 # Celery / Redis
 # CELERY_BROKER_URL = config("REDIS_URL", default="redis://localhost:6379/0")

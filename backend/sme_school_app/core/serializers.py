@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 
 from tenants.models import Company
-from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate, Notification, AcademicYear, Term, ClassSubjectAssignment
+from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate, Notification, AcademicYear, Term, ClassSubjectAssignment, GradingSystem, Exam, ExamMark
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -224,6 +224,19 @@ class TermSerializer(serializers.ModelSerializer):
         return obj.start_date <= today <= obj.end_date
 
 
+# Subject Serializer
+class SubjectSerializer(serializers.ModelSerializer):
+    grade_levels = serializers.ListField(required=False, default=list)
+
+    class Meta:
+        model = Subject
+        fields = [
+            'id', 'name', 'code', 'category', 'description', 'grade_levels',
+            'credit_hours', 'is_compulsory', 'syllabus', 'materials', 'is_active',
+            'created_at'
+        ]
+
+
 # Class-Subject Assignment Serializer
 class ClassSubjectAssignmentSerializer(serializers.ModelSerializer):
     student_class_name = serializers.CharField(source='student_class.name', read_only=True)
@@ -240,3 +253,226 @@ class ClassSubjectAssignmentSerializer(serializers.ModelSerializer):
             'teacher_name', 'is_active', 'created_at', 'updated_at'
         ]
 
+
+# Exams & Results Serializers
+
+class GradingSystemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GradingSystem
+        fields = [
+            'id', 'name', 'grading_type', 'grading_scale', 'is_default',
+            'is_active', 'created_at', 'updated_at'
+        ]
+
+
+class ExamSerializer(serializers.ModelSerializer):
+    academic_year_name = serializers.CharField(source='academic_year.name', read_only=True)
+    term_name = serializers.CharField(source='term.name', read_only=True)
+    student_class_name = serializers.CharField(source='student_class.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.full_name', read_only=True)
+    marks_count = serializers.SerializerMethodField()
+    is_published = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Exam
+        fields = [
+            'id', 'company', 'academic_year', 'academic_year_name', 'term', 'term_name',
+            'name', 'exam_type', 'student_class', 'student_class_name',
+            'total_marks', 'weight_percentage', 'exam_date', 'results_publish_date',
+            'is_locked', 'is_active', 'created_by', 'created_by_name',
+            'notes', 'marks_count', 'is_published', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['marks_count', 'is_published']
+
+    def get_marks_count(self, obj):
+        return obj.marks.count()
+
+    def get_is_published(self, obj):
+        from django.utils import timezone
+        if obj.results_publish_date:
+            return timezone.now().date() >= obj.results_publish_date
+        return False
+
+
+class ExamMarkSerializer(serializers.ModelSerializer):
+    exam_name = serializers.CharField(source='exam.name', read_only=True)
+    student_name = serializers.CharField(source='student.get_full_name', read_only=True)
+    admission_number = serializers.CharField(source='student.admission_number', read_only=True)
+    subject_name = serializers.CharField(source='subject.name', read_only=True)
+    subject_code = serializers.CharField(source='subject.code', read_only=True)
+    entered_by_name = serializers.CharField(source='entered_by.full_name', read_only=True)
+
+    class Meta:
+        model = ExamMark
+        fields = [
+            'id', 'company', 'exam', 'exam_name', 'student', 'student_name', 'admission_number',
+            'subject', 'subject_name', 'subject_code', 'marks_obtained', 'cbc_level',
+            'grade', 'points', 'teacher_remarks', 'is_absent', 'entered_by',
+            'entered_by_name', 'entered_at'
+        ]
+        read_only_fields = ['grade', 'points', 'entered_at']
+
+
+class BulkExamMarkSerializer(serializers.Serializer):
+    """Serializer for bulk marks entry"""
+    exam_id = serializers.IntegerField()
+    subject_id = serializers.IntegerField()
+    marks_data = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField(allow_blank=True)
+        )
+    )
+
+
+class StudentReportCardSerializer(serializers.Serializer):
+    """Serializer for student report card data"""
+    student_id = serializers.IntegerField()
+    term_id = serializers.IntegerField()
+    academic_year_id = serializers.IntegerField()
+
+    def to_representation(self, instance):
+        # Custom representation for report card data
+        student = instance['student']
+        exam_marks = instance['exam_marks']
+        term = instance['term']
+
+        # Calculate averages and grades
+        total_marks = 0
+        total_weight = 0
+        subject_results = []
+
+        for mark in exam_marks:
+            if mark.marks_obtained and not mark.is_absent:
+                weight = float(mark.exam.weight_percentage)
+                weighted_mark = float(mark.marks_obtained) * (weight / 100)
+                total_marks += weighted_mark
+                total_weight += weight
+
+                subject_results.append({
+                    'subject_name': mark.subject.name,
+                    'subject_code': mark.subject.code,
+                    'marks_obtained': mark.marks_obtained,
+                    'grade': mark.grade,
+                    'points': mark.points,
+                    'exam_name': mark.exam.name,
+                    'weight': mark.exam.weight_percentage
+                })
+
+        mean_score = total_marks / total_weight if total_weight > 0 else 0
+
+        # Determine overall grade based on mean score
+        overall_grade = self._calculate_overall_grade(mean_score, student.company)
+
+        return {
+            'student': {
+                'id': student.id,
+                'name': student.get_full_name(),
+                'admission_number': student.admission_number,
+                'class_name': student.student_class.name if student.student_class else None
+            },
+            'term': {
+                'id': term.id,
+                'name': term.name,
+                'academic_year': term.academic_year.name
+            },
+            'mean_score': round(mean_score, 2),
+            'overall_grade': overall_grade,
+            'subject_results': subject_results,
+            'generated_at': serializers.DateTimeField().to_representation(serializers.DateTimeField().get_default())
+        }
+
+    def _calculate_overall_grade(self, mean_score, company):
+        """Calculate overall grade based on school's grading system"""
+        try:
+            grading_system = GradingSystem.objects.filter(
+                company=company,
+                is_default=True,
+                is_active=True
+            ).first()
+
+            if grading_system and grading_system.grading_type == '8-4-4':
+                for grade_rule in grading_system.grading_scale:
+                    if (grade_rule['min_mark'] <= mean_score <= grade_rule['max_mark']):
+                        return grade_rule['grade']
+        except:
+            pass
+        return None
+
+
+class ClassPerformanceSerializer(serializers.Serializer):
+    """Serializer for class performance analytics"""
+    class_id = serializers.IntegerField()
+    term_id = serializers.IntegerField()
+    academic_year_id = serializers.IntegerField()
+
+    def to_representation(self, instance):
+        student_class = instance['student_class']
+        exam_marks = instance['exam_marks']
+
+        # Calculate class statistics
+        student_stats = {}
+        subject_stats = {}
+
+        for mark in exam_marks:
+            student_id = mark.student.id
+            subject_id = mark.subject.id
+
+            if student_id not in student_stats:
+                student_stats[student_id] = {
+                    'student_name': mark.student.get_full_name(),
+                    'admission_number': mark.student.admission_number,
+                    'total_marks': 0,
+                    'total_weight': 0,
+                    'subject_count': 0
+                }
+
+            if subject_id not in subject_stats:
+                subject_stats[subject_id] = {
+                    'subject_name': mark.subject.name,
+                    'marks': [],
+                    'pass_count': 0,
+                    'total_students': 0
+                }
+
+            if mark.marks_obtained and not mark.is_absent:
+                weight = float(mark.exam.weight_percentage)
+                weighted_mark = float(mark.marks_obtained) * (weight / 100)
+
+                student_stats[student_id]['total_marks'] += weighted_mark
+                student_stats[student_id]['total_weight'] += weight
+                student_stats[student_id]['subject_count'] += 1
+
+                subject_stats[subject_id]['marks'].append(mark.marks_obtained)
+                subject_stats[subject_id]['total_students'] += 1
+                if mark.marks_obtained >= 50:  # Assuming 50 is pass mark
+                    subject_stats[subject_id]['pass_count'] += 1
+
+        # Calculate averages
+        for student_stat in student_stats.values():
+            if student_stat['total_weight'] > 0:
+                student_stat['mean_score'] = student_stat['total_marks'] / student_stat['total_weight']
+            else:
+                student_stat['mean_score'] = 0
+
+        for subject_stat in subject_stats.values():
+            if subject_stat['marks']:
+                subject_stat['average_mark'] = sum(subject_stat['marks']) / len(subject_stat['marks'])
+                subject_stat['pass_rate'] = (subject_stat['pass_count'] / subject_stat['total_students']) * 100
+            else:
+                subject_stat['average_mark'] = 0
+                subject_stat['pass_rate'] = 0
+
+        # Sort students by mean score for ranking
+        student_rankings = sorted(
+            student_stats.values(),
+            key=lambda x: x['mean_score'],
+            reverse=True
+        )
+
+        return {
+            'class_name': student_class.name,
+            'total_students': len(student_rankings),
+            'subject_performance': list(subject_stats.values()),
+            'student_rankings': student_rankings,
+            'class_average': sum(s['mean_score'] for s in student_rankings) / len(student_rankings) if student_rankings else 0
+        }

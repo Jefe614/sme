@@ -27,6 +27,8 @@ import {
   deleteClassSubjectAssignment,
   validateClassSubjectAssignmentData,
   fetchAcademicYears,
+  fetchClasses,
+  fetchSubjects,
 } from "../../api/academicApi";
 import { getStaff } from "../../api/auth";
 import { showNotification, handleApiError } from "../../utils/notifications";
@@ -82,8 +84,10 @@ export default function ClassSubjectAssignmentManagementPage() {
 
   const fetchReferenceData = async () => {
     try {
-      const [academicYearsRes, staffRes] = await Promise.all([
+      const [academicYearsRes, classesRes, subjectsRes, staffRes] = await Promise.all([
         fetchAcademicYears(),
+        fetchClasses(),
+        fetchSubjects(),
         getStaff()
       ]);
 
@@ -98,6 +102,24 @@ export default function ClassSubjectAssignmentManagementPage() {
       }
       setAcademicYears(yearsData);
 
+      // Set classes
+      let classesData = [];
+      if (classesRes && Array.isArray(classesRes)) {
+        classesData = classesRes;
+      }
+      setClasses(classesData);
+
+      // Set subjects
+      let subjectsData = [];
+      if (subjectsRes && subjectsRes.data && Array.isArray(subjectsRes.data.data)) {
+        subjectsData = subjectsRes.data.data;
+      } else if (Array.isArray(subjectsRes.data)) {
+        subjectsData = subjectsRes.data;
+      } else if (Array.isArray(subjectsRes)) {
+        subjectsData = subjectsRes;
+      }
+      setSubjects(subjectsData);
+
       // Set staff
       let staffData = [];
       if (staffRes && staffRes.data && Array.isArray(staffRes.data.data)) {
@@ -109,22 +131,9 @@ export default function ClassSubjectAssignmentManagementPage() {
       }
       setStaff(staffData);
 
-      // For now, use mock data for classes and subjects
-      // In a real implementation, you would fetch these from your API
-      setClasses([
-        { id: 1, name: "Grade 1A" },
-        { id: 2, name: "Grade 1B" },
-        { id: 3, name: "Grade 2A" },
-      ]);
-
-      setSubjects([
-        { id: 1, name: "Mathematics", code: "MATH" },
-        { id: 2, name: "English", code: "ENG" },
-        { id: 3, name: "Science", code: "SCI" },
-      ]);
-
     } catch (error) {
       console.error("Error fetching reference data:", error);
+      handleApiError(error, "Failed to load reference data");
     }
   };
 

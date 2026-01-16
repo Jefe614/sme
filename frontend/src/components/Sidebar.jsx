@@ -27,6 +27,7 @@ export default function Sidebar({ userType, onCollapse }) {
   const [mobileVisible, setMobileVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [academicExpanded, setAcademicExpanded] = useState(false);
+  const [examsExpanded, setExamsExpanded] = useState(false);
   const location = useLocation();
   const { user } = useContext(AuthContext);
 
@@ -54,6 +55,7 @@ export default function Sidebar({ userType, onCollapse }) {
     { key: '/school-dashboard/students', icon: <TeamOutlined />, label: 'Students', path: '/school-dashboard/students' },
     { key: '/school-dashboard/teachers', icon: <SolutionOutlined />, label: 'Teachers', path: '/school-dashboard/teachers' },
     { key: '/school-dashboard/classrooms', icon: <BookOutlined />, label: 'Classes', path: '/school-dashboard/classrooms' },
+    { key: '/school-dashboard/exams', icon: <FileTextOutlined />, label: 'Exams & Results', path: '/school-dashboard/exams' },
     { key: '/school-dashboard/fees', icon: <MoneyCollectOutlined />, label: 'Fee Management', path: '/school-dashboard/fees' },
     { key: '/school-dashboard/transport', icon: <CarOutlined />, label: 'Transport', path: '/school-dashboard/transport' },
     { key: '/school-dashboard/academic-years', icon: <CalendarOutlined />, label: 'Academic Calendar', path: '/school-dashboard/academic-years' },
@@ -76,6 +78,10 @@ export default function Sidebar({ userType, onCollapse }) {
     setAcademicExpanded(!academicExpanded);
   };
 
+  const toggleExamsMenu = () => {
+    setExamsExpanded(!examsExpanded);
+  };
+
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
     if (onCollapse) onCollapse(!collapsed);
@@ -87,7 +93,16 @@ export default function Sidebar({ userType, onCollapse }) {
   const academicSubMenuItems = [
     { key: '/school-dashboard/academic-years', label: 'Academic Years', path: '/school-dashboard/academic-years' },
     { key: '/school-dashboard/terms', label: 'Terms', path: '/school-dashboard/terms' },
+    { key: '/school-dashboard/subjects', label: 'Subjects', path: '/school-dashboard/subjects' },
     { key: '/school-dashboard/subject-assignments', label: 'Subject Assignments', path: '/school-dashboard/subject-assignments' },
+  ];
+
+  const examsSubMenuItems = [
+    { key: '/school-dashboard/exam-management', label: 'Exam Setup', path: '/school-dashboard/exam-management' },
+    { key: '/school-dashboard/marks-entry', label: 'Marks Entry', path: '/school-dashboard/marks-entry' },
+    { key: '/school-dashboard/report-cards', label: 'Report Cards', path: '/school-dashboard/report-cards' },
+    { key: '/school-dashboard/class-performance', label: 'Class Performance', path: '/school-dashboard/class-performance' },
+    { key: '/school-dashboard/grading-systems', label: 'Grading Systems', path: '/school-dashboard/grading-systems' },
   ];
 
   const renderMenuItems = () =>
@@ -97,6 +112,7 @@ export default function Sidebar({ userType, onCollapse }) {
         const isAcademicActive = selectedKeys.some(key =>
           key.startsWith('/school-dashboard/academic') ||
           key.startsWith('/school-dashboard/terms') ||
+          key.startsWith('/school-dashboard/subjects') ||
           key.startsWith('/school-dashboard/subject-assignments')
         );
 
@@ -130,6 +146,90 @@ export default function Sidebar({ userType, onCollapse }) {
             {!collapsed && academicExpanded && (
               <div style={{ marginLeft: '20px' }}>
                 {academicSubMenuItems.map((subItem) => (
+                  <NavLink
+                    key={subItem.key}
+                    to={subItem.path}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '8px 16px',
+                      margin: '2px 0',
+                      borderRadius: '6px',
+                      color: selectedKeys.includes(subItem.key) ? SELECTED_COLOR : TEXT_COLOR,
+                      backgroundColor: selectedKeys.includes(subItem.key) ? 'rgba(96, 165, 250, 0.1)' : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      textDecoration: 'none',
+                      borderLeft: selectedKeys.includes(subItem.key) ? `2px solid ${SELECTED_COLOR}` : '2px solid transparent',
+                      fontSize: '11px',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selectedKeys.includes(subItem.key)) {
+                        e.currentTarget.style.color = HOVER_COLOR;
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selectedKeys.includes(subItem.key)) {
+                        e.currentTarget.style.color = TEXT_COLOR;
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
+                    onClick={handleMenuClick}
+                  >
+                    <span style={{ fontSize: '14px', minWidth: '16px', display: 'flex', alignItems: 'center' }}>
+                      •
+                    </span>
+                    <span>{subItem.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      // Special handling for Exams & Results dropdown
+      if (item.key === '/school-dashboard/exams' && userType === 'School') {
+        const isExamsActive = selectedKeys.some(key =>
+          key.startsWith('/school-dashboard/exam') ||
+          key.startsWith('/school-dashboard/marks') ||
+          key.startsWith('/school-dashboard/report') ||
+          key.startsWith('/school-dashboard/class-performance') ||
+          key.startsWith('/school-dashboard/grading')
+        );
+
+        return (
+          <div key={item.key}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 16px',
+                margin: '6px 0',
+                borderRadius: '8px',
+                color: isExamsActive ? SELECTED_COLOR : TEXT_COLOR,
+                backgroundColor: isExamsActive ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                borderLeft: isExamsActive ? `3px solid ${SELECTED_COLOR}` : '3px solid transparent',
+                fontSize: collapsed ? '0' : '12px',
+                width: collapsed ? '100%' : 'auto'
+              }}
+              onClick={toggleExamsMenu}
+            >
+              <span style={{ fontSize: '18px', minWidth: '20px', display: 'flex', alignItems: 'center' }}>
+                {item.icon}
+              </span>
+              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && (examsExpanded ? <RightOutlined style={{ marginLeft: 'auto', fontSize: '12px' }} /> : <DownOutlined style={{ marginLeft: 'auto', fontSize: '12px' }} />)}
+            </div>
+
+            {!collapsed && examsExpanded && (
+              <div style={{ marginLeft: '20px' }}>
+                {examsSubMenuItems.map((subItem) => (
                   <NavLink
                     key={subItem.key}
                     to={subItem.path}

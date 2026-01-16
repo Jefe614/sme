@@ -29,7 +29,15 @@ const TemplateManagement = React.lazy(() => import('./pages/documents/TemplateMa
 const NotificationManagement = React.lazy(() => import('./pages/notifications/NotificationManagement'));
 const AcademicYearManagementPage = React.lazy(() => import('./pages/academic/AcademicYearManagementPage'));
 const TermManagementPage = React.lazy(() => import('./pages/academic/TermManagementPage'));
+const SubjectManagementPage = React.lazy(() => import('./pages/academic/SubjectManagementPage'));
 const ClassSubjectAssignmentManagementPage = React.lazy(() => import('./pages/academic/ClassSubjectAssignmentManagementPage'));
+
+// Exam Management Pages
+const ExamManagementPage = React.lazy(() => import('./pages/exams/ExamManagementPage'));
+const MarksEntryPage = React.lazy(() => import('./pages/exams/MarksEntryPage'));
+const StudentReportCardPage = React.lazy(() => import('./pages/exams/StudentReportCardPage'));
+const ClassPerformancePage = React.lazy(() => import('./pages/exams/ClassPerformancePage'));
+const GradingSystemManagementPage = React.lazy(() => import('./pages/exams/GradingSystemManagementPage'));
 
 function App() {
   return (
@@ -90,7 +98,15 @@ function App() {
                         <Route path="notifications" element={<NotificationManagement />} />
                         <Route path="academic-years" element={<AcademicYearManagementPage />} />
                         <Route path="terms" element={<TermManagementPage />} />
+                        <Route path="subjects" element={<SubjectManagementPage />} />
                         <Route path="subject-assignments" element={<ClassSubjectAssignmentManagementPage />} />
+
+                        {/* Exam Management Routes */}
+                        <Route path="exam-management" element={<ExamManagementPage />} />
+                        <Route path="marks-entry" element={<MarksEntryPage />} />
+                        <Route path="report-cards" element={<StudentReportCardPage />} />
+                        <Route path="class-performance" element={<ClassPerformancePage />} />
+                        <Route path="grading-systems" element={<GradingSystemManagementPage />} />
 
                         {/* Add other School sub-routes here */}
                       </Routes>
