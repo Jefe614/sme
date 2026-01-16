@@ -14,6 +14,7 @@ import {
 } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { createClass, getTeachers } from "../../api/auth";
+import { fetchAcademicYears } from "../../api/academicApi";
 import { showNotification, handleApiError } from "../../utils/notifications";
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -22,6 +23,7 @@ const { TextArea } = Input;
 export default function CreateClassPage() {
   const [form] = Form.useForm();
   const [teachers, setTeachers] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -42,11 +44,30 @@ export default function CreateClassPage() {
   ];
 
   const sections = ["A", "B", "C", "D", "E", "F"];
-  const academicYears = ["2023-2024", "2024-2025", "2025-2026"];
 
   useEffect(() => {
     fetchTeachers();
+    fetchAcademicYearsData();
   }, []);
+
+  const fetchAcademicYearsData = async () => {
+    try {
+      const response = await fetchAcademicYears();
+      let yearsData = [];
+      if (response && response.data && Array.isArray(response.data.data)) {
+        yearsData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        yearsData = response.data;
+      } else if (Array.isArray(response)) {
+        yearsData = response;
+      }
+      setAcademicYears(yearsData);
+    } catch (error) {
+      console.error("Error fetching academic years:", error);
+      message.error("Failed to load academic years");
+      setAcademicYears([]);
+    }
+  };
 
   const fetchTeachers = async () => {
     try {
@@ -96,7 +117,6 @@ export default function CreateClassPage() {
         initialValues={{
           max_students: 40,
           is_active: true,
-          academic_year: "2024-2025",
           section: "A",
         }}
       >
@@ -140,12 +160,12 @@ export default function CreateClassPage() {
             <Form.Item
               name="academic_year"
               label="Academic Year"
-              rules={[{ required: true, message: "Please enter academic year" }]}
+              rules={[{ required: true, message: "Please select academic year" }]}
             >
               <Select placeholder="Select academic year" size="large">
                 {academicYears.map((year) => (
-                  <Option key={year} value={year}>
-                    {year}
+                  <Option key={year.id} value={year.id}>
+                    {year.name}
                   </Option>
                 ))}
               </Select>

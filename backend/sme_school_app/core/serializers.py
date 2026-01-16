@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 
 from tenants.models import Company
-from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate, Notification
+from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate, Notification, AcademicYear, Term, ClassSubjectAssignment
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -66,9 +66,27 @@ class FeePaymentSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data['date_paid'] = instance.payment_date.isoformat()
         return data
+    
+
+class AcademicCalenderSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = AcademicYear
+        fields = [
+            "id", "name"
+        ]
+
+class TermsSerialzer(serializers.ModelSerializer):
+    class Meta:
+        model = Term
+        fields = [
+            "id", "name"
+        ]
 
 
 class FeeStructureSerializer(serializers.ModelSerializer):
+    academic_year = AcademicCalenderSerializer(read_only=True)
+    term = TermsSerialzer(read_only=True)
     student_count = serializers.SerializerMethodField()
     total_paid = serializers.SerializerMethodField()
 
@@ -96,6 +114,7 @@ class FeeDiscountSerializer(serializers.ModelSerializer):
     
 
 class StudentClassSerializer(serializers.ModelSerializer):
+    academic_year_read = AcademicCalenderSerializer(source='academic_year', read_only=True)
     class_teacher = serializers.PrimaryKeyRelatedField(
         queryset=Staff.objects.all(),
         required=False,
@@ -105,12 +124,11 @@ class StudentClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentClass
         fields = [
-            'id', 'name', 'grade_level', 'section', 'academic_year',
+            'id', 'name', 'grade_level', 'section', 'academic_year_read',
             'class_teacher', 'max_students', 'current_strength',
             'room_number', 'curriculum', 'class_schedule', 'is_active',
             'created_at', 'updated_at'
         ]
-
 
 
 class StaffSerializer(serializers.ModelSerializer):
@@ -163,3 +181,62 @@ class NotificationSerializer(serializers.ModelSerializer):
             'error_message', 'reference_number', 'created_at', 'updated_at'
         ]
         read_only_fields = ['status', 'sent_at', 'error_message', 'reference_number', 'created_at', 'updated_at']
+
+
+# Academic Year Serializer
+class AcademicYearSerializer(serializers.ModelSerializer):
+    terms_count = serializers.SerializerMethodField()
+    is_current_year = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AcademicYear
+        fields = [
+            'id', 'name', 'start_date', 'end_date', 'is_active', 'is_archived',
+            'terms_count', 'is_current_year', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['terms_count', 'is_current_year']
+
+    def get_terms_count(self, obj):
+        return obj.terms.count()
+
+    def get_is_current_year(self, obj):
+        from django.utils import timezone
+        today = timezone.now().date()
+        return obj.start_date <= today <= obj.end_date
+
+
+# Term Serializer
+class TermSerializer(serializers.ModelSerializer):
+    academic_year_name = serializers.CharField(source='academic_year.name', read_only=True)
+    is_within_date_range = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Term
+        fields = [
+            'id', 'academic_year', 'academic_year_name', 'name', 'start_date', 'end_date',
+            'is_current', 'is_locked', 'is_within_date_range', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['is_within_date_range']
+
+    def get_is_within_date_range(self, obj):
+        from django.utils import timezone
+        today = timezone.now().date()
+        return obj.start_date <= today <= obj.end_date
+
+
+# Class-Subject Assignment Serializer
+class ClassSubjectAssignmentSerializer(serializers.ModelSerializer):
+    student_class_name = serializers.CharField(source='student_class.name', read_only=True)
+    subject_name = serializers.CharField(source='subject.name', read_only=True)
+    subject_code = serializers.CharField(source='subject.code', read_only=True)
+    academic_year_name = serializers.CharField(source='academic_year.name', read_only=True)
+    teacher_name = serializers.CharField(source='teacher.full_name', read_only=True)
+
+    class Meta:
+        model = ClassSubjectAssignment
+        fields = [
+            'id', 'student_class', 'student_class_name', 'subject', 'subject_name',
+            'subject_code', 'academic_year', 'academic_year_name', 'teacher',
+            'teacher_name', 'is_active', 'created_at', 'updated_at'
+        ]
+

@@ -1,6 +1,6 @@
 // src/pages/staff/CreateStaffPage.jsx
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
 import {
   Form,
   Input,
@@ -15,7 +15,7 @@ import {
   Upload,
 } from "antd";
 import { UploadOutlined, SaveOutlined } from "@ant-design/icons";
-import { createStaff, getClasses, getSubjects } from "../../api/auth";
+import { createStaff, getClasses, getSubjects, getStaffById, updateStaff } from "../../api/auth";
 import { getGradeLabel } from "../../utils/gradeLevels";
 import { showNotification, handleApiError } from "../../utils/notifications";
 import moment from "moment";
@@ -30,8 +30,10 @@ export default function CreateStaffPage() {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [staffType, setStaffType] = useState("teaching");
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { id } = useParams();
   const isTeacherRoute = location.state?.isTeacher || false;
 
   const staffTypes = [
@@ -96,23 +98,45 @@ export default function CreateStaffPage() {
     { value: "other", label: "Other" },
   ];
 
-  const bloodGroupOptions = [
-    { value: "A+", label: "A+" },
-    { value: "A-", label: "A-" },
-    { value: "B+", label: "B+" },
-    { value: "B-", label: "B-" },
-    { value: "AB+", label: "AB+" },
-    { value: "AB-", label: "AB-" },
-    { value: "O+", label: "O+" },
-    { value: "O-", label: "O-" },
-  ];
-
   useEffect(() => {
     fetchClasses();
     fetchSubjects();
-    form.setFieldsValue({ staff_type: isTeacherRoute ? "teaching" : "teaching" });
-    setStaffType(isTeacherRoute ? "teaching" : "teaching");
-  }, [form, isTeacherRoute]);
+    if (id) {
+      setIsEditing(true);
+      fetchStaffData();
+    } else {
+      setIsEditing(false);
+      form.setFieldsValue({ staff_type: isTeacherRoute ? "teaching" : "teaching" });
+      setStaffType(isTeacherRoute ? "teaching" : "teaching");
+    }
+  }, [form, isTeacherRoute, id]);
+
+  const fetchStaffData = async () => {
+    try {
+      const response = await getStaffById(id);
+      const staffData = response.data;
+
+      // Convert backend data to form format
+      const formData = {
+        ...staffData,
+        date_of_birth: staffData.dateOfBirth ? moment(staffData.dateOfBirth) : null,
+        date_joined: staffData.dateJoined ? moment(staffData.dateJoined) : null,
+        contract_start_date: staffData.contractStartDate ? moment(staffData.contractStartDate) : null,
+        contract_end_date: staffData.contractEndDate ? moment(staffData.contractEndDate) : null,
+        probation_end_date: staffData.probationEndDate ? moment(staffData.probationEndDate) : null,
+        is_active: staffData.isActive,
+        is_class_teacher: staffData.isClassTeacher,
+        class_teacher_of: staffData.classTeacherOf,
+      };
+
+      form.setFieldsValue(formData);
+      setStaffType(staffData.staffType);
+    } catch (error) {
+      console.error("Error fetching staff data:", error);
+      handleApiError(error, "Failed to load staff data");
+      navigate(isTeacherRoute ? "/school-dashboard/teachers" : "/school-dashboard/staff");
+    }
+  };
 
   const fetchClasses = async () => {
     try {
@@ -176,13 +200,19 @@ export default function CreateStaffPage() {
         console.log(key, value);
       }
 
-      const response = await createStaff(formData);
+      let response;
+      if (isEditing) {
+        response = await updateStaff(id, formData);
+        showNotification.success("Success", "Staff updated successfully!");
+      } else {
+        response = await createStaff(formData);
+        showNotification.success("Success", "Staff created successfully!");
+      }
       console.log("API Response:", response);
-      showNotification.success("Success", "Staff created successfully!");
       navigate(isTeacherRoute ? "/school-dashboard/teachers" : "/school-dashboard/staff");
     } catch (error) {
-      console.error("Error creating staff:", error);
-      handleApiError(error, "Failed to create staff");
+      console.error(`Error ${isEditing ? 'updating' : 'creating'} staff:`, error);
+      handleApiError(error, `Failed to ${isEditing ? 'update' : 'create'} staff`);
     } finally {
       setLoading(false);
     }
@@ -208,10 +238,10 @@ export default function CreateStaffPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <Title level={2} className="!mb-2">
-            Create New {isTeacherRoute ? "Teacher" : "Staff"}
+            {isEditing ? `Edit ${isTeacherRoute ? "Teacher" : "Staff"}` : `Create New ${isTeacherRoute ? "Teacher" : "Staff"}`}
           </Title>
           <Text type="secondary">
-            Fill in the details to create a new {isTeacherRoute ? "teacher" : "staff member"}
+            {isEditing ? `Update the details of the ${isTeacherRoute ? "teacher" : "staff member"}` : `Fill in the details to create a new ${isTeacherRoute ? "teacher" : "staff member"}`}
           </Text>
         </div>
         <Link to={isTeacherRoute ? "/school-dashboard/teachers" : "/school-dashboard/staff"}>
@@ -465,37 +495,6 @@ export default function CreateStaffPage() {
               </Col>
               <Col xs={24} sm={12}>
                 <Form.Item name="is_class_teacher" label="Is Class Teacher" valuePropName="checked">
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={12}>
-                <Form.Item name="specialization" label="Specialization">
-                  <Input size="large" placeholder="e.g., Mathematics Education" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={12}>
-                <Form.Item name="subjects" label="Subjects Taught">
-                  <Select mode="multiple" size="large" placeholder="Select subjects">
-                    {subjects.map((subject) => (
-                      <Option key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={12}>
-                <Form.Item name="classes_taught" label="Classes Taught">
-                  <Select mode="multiple" size="large" placeholder="Select classes">
-                    {classes.map((cls) => (
-                      <Option key={cls.id} value={cls.id}>
-                        {`${getGradeLabel(cls.grade_level)} - Section ${cls.section}`}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={12}>
-                <Form.Item name="is_class_teacher" label="Is Class Teacher" valuePropName="checked">
                   <Switch checkedChildren="Yes" unCheckedChildren="No" />
                 </Form.Item>
               </Col>
@@ -556,7 +555,7 @@ export default function CreateStaffPage() {
             icon={<SaveOutlined />}
             size="large"
           >
-            Create Staff
+            {isEditing ? `Update ${isTeacherRoute ? "Teacher" : "Staff"}` : `Create ${isTeacherRoute ? "Teacher" : "Staff"}`}
           </Button>
         </div>
       </Form>

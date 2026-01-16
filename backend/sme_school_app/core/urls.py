@@ -7,6 +7,7 @@ from .views import (
 from .fees import FeeStructureAPIView, FeePaymentAPIView, FeeDiscountAPIView, FeeReportingAPIView
 from .documents import DocumentTemplateAPIView, DocumentTemplateDetailAPIView, TemplateCategoriesAPIView, GenerateDocumentAPIView, DownloadDocumentAPIView
 from .bulk_import import BulkImportStudentsAPIView, DownloadStudentTemplateAPIView
+from .academic import AcademicYearAPIView, TermAPIView, ClassSubjectAssignmentAPIView
 
 urlpatterns = [
     path("signup/", SignupAPIView.as_view(), name="signup"),
@@ -23,6 +24,14 @@ urlpatterns = [
     path('teachers/', TeacherAPIView.as_view(), name='teachers-list'),
     path('teachers/', TeacherAPIView.as_view(), name='teachers-list'),
     path('school-dashboard-summary/', SchoolDashboardSummaryAPIView.as_view(), name='school-dashboard-summary'),
+
+    # Academic Management URLs
+    path("academic-years/", AcademicYearAPIView.as_view(), name="academic-years"),
+    path("academic-years/<int:pk>/", AcademicYearAPIView.as_view(), name="academic-year-detail"),
+    path("terms/", TermAPIView.as_view(), name="terms"),
+    path("terms/<int:pk>/", TermAPIView.as_view(), name="term-detail"),
+    path("class-subject-assignments/", ClassSubjectAssignmentAPIView.as_view(), name="class-subject-assignments"),
+    path("class-subject-assignments/<int:pk>/", ClassSubjectAssignmentAPIView.as_view(), name="class-subject-assignment-detail"),
 
     # Fee Management URLs
     path("fee-structures/", FeeStructureAPIView.as_view(), name="fee-structures"),

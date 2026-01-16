@@ -2,6 +2,7 @@ from django.utils import timezone
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password, check_password
+from django.db.models import Q
 
 
 # SME Models
@@ -16,6 +17,102 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.description} - {self.amount}"
 
+
+# Academic Year Model - Foundation for all academic activities
+class AcademicYear(models.Model):
+    company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
+    name = models.CharField(max_length=20, unique=True, help_text="e.g., 2024-2025")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_active = models.BooleanField(default=False, help_text="Only one academic year can be active at a time")
+    is_archived = models.BooleanField(default=False, help_text="Archived years cannot be modified")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Academic Year'
+        verbose_name_plural = 'Academic Years'
+        ordering = ['-start_date']
+        db_table = 'academic_years'
+        unique_together = ['company', 'name']
+
+    def clean(self):
+        if self.is_active:
+            # Ensure only one active academic year per company
+            active_years = AcademicYear.objects.filter(
+                company=self.company,
+                is_active=True
+            ).exclude(pk=self.pk)
+            if active_years.exists():
+                raise ValidationError("Only one academic year can be active at a time.")
+
+        # Validate date range
+        if self.start_date >= self.end_date:
+            raise ValidationError("End date must be after start date.")
+
+    def delete(self, *args, **kwargs):
+        if self.is_active:
+            raise ValidationError("Cannot delete an active academic year. Archive it first.")
+        super().delete(*args, **kwargs)
+
+    def __str__(self):
+        status = " (Active)" if self.is_active else " (Archived)" if self.is_archived else ""
+        return f"{self.name}{status}"
+
+
+# Term Model - Belongs to an academic year
+class Term(models.Model):
+    TERM_NAMES = (
+        ('Term 1', 'Term 1'),
+        ('Term 2', 'Term 2'),
+        ('Term 3', 'Term 3'),
+    )
+
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='terms')
+    name = models.CharField(max_length=20, choices=TERM_NAMES)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_current = models.BooleanField(default=False, help_text="Only one term can be current per academic year")
+    is_locked = models.BooleanField(default=False, help_text="Past terms are locked and cannot be modified")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Term'
+        verbose_name_plural = 'Terms'
+        ordering = ['start_date']
+        db_table = 'terms'
+        unique_together = ['academic_year', 'name']
+
+    def clean(self):
+        if self.is_current:
+            # Ensure only one current term per academic year
+            current_terms = Term.objects.filter(
+                academic_year=self.academic_year,
+                is_current=True
+            ).exclude(pk=self.pk)
+            if current_terms.exists():
+                raise ValidationError("Only one term can be current at a time per academic year.")
+
+        # Validate term dates are within academic year
+        if self.start_date < self.academic_year.start_date or self.end_date > self.academic_year.end_date:
+            raise ValidationError("Term dates must be within the academic year dates.")
+
+        # Validate term date range
+        if self.start_date >= self.end_date:
+            raise ValidationError("Term end date must be after start date.")
+
+    def save(self, *args, **kwargs):
+        # Auto-lock past terms
+        if self.end_date < timezone.now().date() and not self.is_locked:
+            self.is_locked = True
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        status = " (Current)" if self.is_current else " (Locked)" if self.is_locked else ""
+        return f"{self.academic_year.name} - {self.name}{status}"
 
 
 # School Models
@@ -123,11 +220,11 @@ class StudentClass(models.Model):
     
     company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
     
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=True, blank=True)
     grade_level = models.CharField(max_length=20, choices=GRADE_LEVELS)
     section = models.CharField(max_length=5, choices=SECTION_CHOICES, default='A')
-    
-    academic_year = models.CharField(max_length=9)  # e.g., "2024-2025"
+
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE)
     class_teacher = models.ForeignKey(
         'Staff', 
         on_delete=models.SET_NULL, 
@@ -205,8 +302,8 @@ class FeeStructure(models.Model):
     student_type = models.CharField(max_length=10, choices=Student.STUDENT_TYPES, blank=True, null=True)
     
     # Academic Context
-    academic_year = models.CharField(max_length=9)  # e.g., "2024-2025"
-    term = models.CharField(max_length=10, choices=TERM_CHOICES)
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE)
+    term = models.ForeignKey(Term, on_delete=models.CASCADE, blank=True, null=True)  # Null for annual fees
     
     # Payment Details
     due_date = models.DateField(blank=True, null=True)
@@ -574,6 +671,49 @@ class Subject(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.code})" if self.code else self.name
+
+
+# Class-Subject Assignment Model - Links subjects to classes per academic year
+class ClassSubjectAssignment(models.Model):
+    student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name='subject_assignments')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='class_assignments')
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='class_subject_assignments')
+
+    # Optional teacher assignment for this subject in this class
+    teacher = models.ForeignKey(
+        Staff,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='subject_assignments',
+        help_text="Teacher assigned to teach this subject in this class"
+    )
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Class Subject Assignment'
+        verbose_name_plural = 'Class Subject Assignments'
+        db_table = 'class_subject_assignments'
+        unique_together = ['student_class', 'subject', 'academic_year']
+
+    def clean(self):
+        # Ensure the subject and class belong to the same company
+        if self.student_class.company != self.subject.company:
+            raise ValidationError("Subject and class must belong to the same school.")
+
+        # Ensure the academic year belongs to the same company
+        if self.academic_year.company != self.student_class.company:
+            raise ValidationError("Academic year must belong to the same school.")
+
+        # Validate teacher belongs to the same company
+        if self.teacher and self.teacher.company != self.student_class.company:
+            raise ValidationError("Teacher must belong to the same school.")
+
+    def __str__(self):
+        return f"{self.student_class} - {self.subject} ({self.academic_year.name})"
 
 
 # Staff Attendance Model

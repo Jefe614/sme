@@ -14,7 +14,7 @@ from rest_framework.permissions import AllowAny
 
 from tenants.models import Company, Domain
 
-from .models import Notification, Staff, StudentClass, Subject, Transaction, Student, FeePayment
+from .models import Notification, Staff, StudentClass, Subject, Transaction, Student, FeePayment, AcademicYear
 from .serializers import (
     CompanySerializer,
     NotificationSerializer,
@@ -509,15 +509,14 @@ class StudentClassView(APIView):
             data = request.data
             grade_level = data.get("grade_level", "").strip()
             section = data.get("section", "").strip()
-            academic_year = data.get("academic_year", "").strip()
+            academic_year_id = data.get("academic_year")
             max_students = data.get("max_students")
-            class_teacher = data.get("class_teacher")
+            class_teacher_id = data.get("class_teacher")
             room_number = data.get("room_number", "").strip()
             curriculum = data.get("curriculum", "").strip()
             class_schedule = data.get("class_schedule", "")
             is_active = data.get("is_active", True)
             name = data.get("name", "").strip()
-            
 
             # Validate required fields
             required_fields = ['grade_level', 'section', 'academic_year', 'max_students']
@@ -541,16 +540,18 @@ class StudentClassView(APIView):
                     "error": f"Invalid section. Must be one of: {', '.join(valid_sections)}"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Validate academic_year format (e.g., "2024-2025")
-            if not academic_year or not isinstance(academic_year, str) or len(academic_year) != 9 or academic_year[4] != '-':
+            # Validate academic_year
+            try:
+                academic_year_obj = AcademicYear.objects.get(id=academic_year_id, company=company)
+            except AcademicYear.DoesNotExist:
                 return Response({
-                    "error": "Invalid academic_year format. Must be 'YYYY-YYYY' (e.g., '2024-2025')"
+                    "error": "Invalid academic_year"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             # Validate max_students
             try:
                 max_students = int(max_students)
-                if max_students < 1 or max_students > 60:  # Assuming 60 as max, per frontend
+                if max_students < 1 or max_students > 60:
                     return Response({
                         "error": "max_students must be between 1 and 60"
                     }, status=status.HTTP_400_BAD_REQUEST)
@@ -561,50 +562,49 @@ class StudentClassView(APIView):
 
             # Validate class_teacher (if provided)
             class_teacher_obj = None
-            if class_teacher:
+            if class_teacher_id:
                 try:
-                    class_teacher_obj = Staff.objects.get(id=class_teacher, company=company)
+                    class_teacher_obj = Staff.objects.get(id=class_teacher_id, company=company)
                 except Staff.DoesNotExist:
                     return Response({
                         "error": "Invalid class_teacher ID"
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Handle class_schedule (convert string to list)
+            # Handle class_schedule
             class_schedule_list = []
             if class_schedule:
                 try:
                     class_schedule_list = json.loads(class_schedule) if class_schedule else []
                     if not isinstance(class_schedule_list, list):
-                        class_schedule_list = [class_schedule]  # Treat as single-item list if not JSON
+                        class_schedule_list = [class_schedule]
                 except json.JSONDecodeError:
-                    class_schedule_list = [class_schedule]  # Treat as string list if invalid JSON
+                    class_schedule_list = [class_schedule]
 
             # Generate name if not provided
             if not name:
-                name = f"{grade_level} - Section {section} ({academic_year})"
+                name = f"{grade_level} - Section {section} ({academic_year_obj.name})"
 
-            # Prepare data for serialization
-            student_class_data = {
-                "name": name,
-                "grade_level": grade_level,
-                "section": section,
-                "academic_year": academic_year,
-                "class_teacher": class_teacher_obj,
-                "max_students": max_students,
-                "room_number": room_number,
-                "curriculum": curriculum,
-                "class_schedule": class_schedule_list,
-                "is_active": is_active
-            }
+            # Create the class
+            student_class = StudentClass.objects.create(
+                company=company,
+                name=name,
+                grade_level=grade_level,
+                section=section,
+                academic_year=academic_year_obj,
+                class_teacher=class_teacher_obj,
+                max_students=max_students,
+                room_number=room_number,
+                curriculum=curriculum,
+                class_schedule=class_schedule_list,
+                is_active=is_active
+            )
 
-            serializer = StudentClassSerializer(data=student_class_data)
-            if serializer.is_valid():
-                serializer.save(company=company)
-                return Response({
-                    "message": "Class created successfully",
-                    "class": serializer.data
-                }, status=status.HTTP_201_CREATED)
-            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            # Serialize for response
+            serializer = StudentClassSerializer(student_class)
+            return Response({
+                "message": "Class created successfully",
+                "class": serializer.data
+            }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -613,22 +613,34 @@ class StudentClassView(APIView):
 class StaffAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, pk=None):
         company = request.company
         if not company:
             return Response({"error": "No tenant found in request"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         if company.company_type != "SCHOOL":
             return Response({"error": "Tenant must be a school company"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+        # If pk is provided, return a single staff member
+        if pk:
+            try:
+                with tenant_context(company):
+                    staff = Staff.objects.get(id=pk, company=company)
+                    return Response({
+                        "message": "Staff retrieved successfully",
+                        "staff": StaffSerializer(staff).data
+                    })
+            except Staff.DoesNotExist:
+                return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+
         # Handle query parameters for filtering
         q = request.query_params.get("q")
         staff_type = request.query_params.get("staff_type")
         staff_role = request.query_params.get("staff_role")
         department = request.query_params.get("department")
-        
+
         staff = Staff.objects.all()
-        
+
         if q:
             staff = staff.filter(
                 Q(first_name__icontains=q) |
@@ -636,23 +648,23 @@ class StaffAPIView(APIView):
                 Q(staff_id__icontains=q) |
                 Q(employee_number__icontains=q)
             )
-        
+
         if staff_type:
             staff = staff.filter(staff_type=staff_type)
-        
+
         if staff_role:
             staff = staff.filter(staff_role=staff_role)
-        
+
         if department:
             staff = staff.filter(department=department)
-        
+
         # Pagination
         paginator = Paginator(staff, request.query_params.get("rows", 25))
         try:
             page = paginator.page(request.query_params.get("page", 1))
         except EmptyPage:
             page = paginator.page(1)
-        
+
         return Response({
             "message": "Staff fetched successfully",
             "staff": StaffSerializer(page, many=True).data,

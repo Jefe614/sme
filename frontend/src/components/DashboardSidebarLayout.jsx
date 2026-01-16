@@ -44,7 +44,7 @@ export default function DashboardSidebarLayout({ userType, children }) {
       <Layout
         className="transition-all duration-300"
         style={{
-          marginLeft: isMobile ? 0 : (sidebarCollapsed ? 60 : 200),
+          marginLeft: isMobile ? 0 : (sidebarCollapsed ? 60 : 220),
           minHeight: '100vh',
           backgroundColor: PRIMARY_COLOR,
           color: TEXT_COLOR

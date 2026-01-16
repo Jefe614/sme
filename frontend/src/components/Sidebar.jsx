@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Layout, Avatar, Typography, Badge, Drawer, Button } from 'antd';
-import { 
-  HomeOutlined, DollarOutlined, TeamOutlined, SolutionOutlined, 
-  MoneyCollectOutlined, CarOutlined, CalendarOutlined, UserOutlined, 
-  BarChartOutlined, FileTextOutlined, BellOutlined, SettingOutlined, 
-  MenuFoldOutlined, MenuUnfoldOutlined, BookOutlined, UsergroupAddOutlined 
+import { Layout, Avatar, Typography, Badge, Drawer, Button, Collapse } from 'antd';
+import {
+  HomeOutlined, DollarOutlined, TeamOutlined, SolutionOutlined,
+  MoneyCollectOutlined, CarOutlined, CalendarOutlined, UserOutlined,
+  BarChartOutlined, FileTextOutlined, BellOutlined, SettingOutlined,
+  MenuFoldOutlined, MenuUnfoldOutlined, BookOutlined, UsergroupAddOutlined,
+  DownOutlined, RightOutlined
 } from '@ant-design/icons';
 import { AuthContext } from '../context/AuthContext';
 
@@ -25,6 +26,7 @@ export default function Sidebar({ userType, onCollapse }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileVisible, setMobileVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [academicExpanded, setAcademicExpanded] = useState(false);
   const location = useLocation();
   const { user } = useContext(AuthContext);
 
@@ -54,7 +56,7 @@ export default function Sidebar({ userType, onCollapse }) {
     { key: '/school-dashboard/classrooms', icon: <BookOutlined />, label: 'Classes', path: '/school-dashboard/classrooms' },
     { key: '/school-dashboard/fees', icon: <MoneyCollectOutlined />, label: 'Fee Management', path: '/school-dashboard/fees' },
     { key: '/school-dashboard/transport', icon: <CarOutlined />, label: 'Transport', path: '/school-dashboard/transport' },
-    { key: '/school-dashboard/calendar', icon: <CalendarOutlined />, label: 'Academic Calendar', path: '/school-dashboard/calendar' },
+    { key: '/school-dashboard/academic-years', icon: <CalendarOutlined />, label: 'Academic Calendar', path: '/school-dashboard/academic-years' },
     { key: '/school-dashboard/staff', icon: <UsergroupAddOutlined />, label: 'Staff Management', path: '/school-dashboard/staff' },
     { key: '/school-dashboard/templates', icon: <FileTextOutlined />, label: 'Document Templates', path: '/school-dashboard/templates' },
     { key: '/school-dashboard/analytics', icon: <BarChartOutlined />, label: 'Analytics', path: '/school-dashboard/analytics' },
@@ -70,6 +72,10 @@ export default function Sidebar({ userType, onCollapse }) {
     if (isMobile) setMobileVisible(false);
   };
 
+  const toggleAcademicMenu = () => {
+    setAcademicExpanded(!academicExpanded);
+  };
+
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
     if (onCollapse) onCollapse(!collapsed);
@@ -78,49 +84,140 @@ export default function Sidebar({ userType, onCollapse }) {
   const showMobileDrawer = () => setMobileVisible(true);
   const hideMobileDrawer = () => setMobileVisible(false);
 
+  const academicSubMenuItems = [
+    { key: '/school-dashboard/academic-years', label: 'Academic Years', path: '/school-dashboard/academic-years' },
+    { key: '/school-dashboard/terms', label: 'Terms', path: '/school-dashboard/terms' },
+    { key: '/school-dashboard/subject-assignments', label: 'Subject Assignments', path: '/school-dashboard/subject-assignments' },
+  ];
+
   const renderMenuItems = () =>
-    menuItems.map((item) => (
-      <NavLink
-        key={item.key}
-        to={item.path}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '12px 16px',
-          margin: '6px 0',
-          borderRadius: '8px',
-          color: selectedKeys.includes(item.key) ? SELECTED_COLOR : TEXT_COLOR,
-          backgroundColor: selectedKeys.includes(item.key) ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-          textDecoration: 'none',
-          borderLeft: selectedKeys.includes(item.key) ? `3px solid ${SELECTED_COLOR}` : '3px solid transparent',
-          fontSize: collapsed ? '0' : '12px',
-          width: collapsed ? '100%' : 'auto'
-        }}
-        onMouseEnter={(e) => {
-          if (!selectedKeys.includes(item.key)) {
-            e.currentTarget.style.color = HOVER_COLOR;
-            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-            e.currentTarget.style.transform = 'translateX(4px)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!selectedKeys.includes(item.key)) {
-            e.currentTarget.style.color = TEXT_COLOR;
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.transform = 'translateX(0)';
-          }
-        }}
-        onClick={handleMenuClick}
-      >
-        <span style={{ fontSize: '18px', minWidth: '20px', display: 'flex', alignItems: 'center' }}>
-          {item.icon}
-        </span>
-        {!collapsed && <span>{item.label}</span>}
-      </NavLink>
-    ));
+    menuItems.map((item) => {
+      // Special handling for Academic Calendar dropdown
+      if (item.key === '/school-dashboard/academic-years' && userType === 'School') {
+        const isAcademicActive = selectedKeys.some(key =>
+          key.startsWith('/school-dashboard/academic') ||
+          key.startsWith('/school-dashboard/terms') ||
+          key.startsWith('/school-dashboard/subject-assignments')
+        );
+
+        return (
+          <div key={item.key}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 16px',
+                margin: '6px 0',
+                borderRadius: '8px',
+                color: isAcademicActive ? SELECTED_COLOR : TEXT_COLOR,
+                backgroundColor: isAcademicActive ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                borderLeft: isAcademicActive ? `3px solid ${SELECTED_COLOR}` : '3px solid transparent',
+                fontSize: collapsed ? '0' : '12px',
+                width: collapsed ? '100%' : 'auto'
+              }}
+              onClick={toggleAcademicMenu}
+            >
+              <span style={{ fontSize: '18px', minWidth: '20px', display: 'flex', alignItems: 'center' }}>
+                {item.icon}
+              </span>
+              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && (academicExpanded ? <RightOutlined style={{ marginLeft: 'auto', fontSize: '12px' }} /> : <DownOutlined style={{ marginLeft: 'auto', fontSize: '12px' }} />)}
+            </div>
+
+            {!collapsed && academicExpanded && (
+              <div style={{ marginLeft: '20px' }}>
+                {academicSubMenuItems.map((subItem) => (
+                  <NavLink
+                    key={subItem.key}
+                    to={subItem.path}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '8px 16px',
+                      margin: '2px 0',
+                      borderRadius: '6px',
+                      color: selectedKeys.includes(subItem.key) ? SELECTED_COLOR : TEXT_COLOR,
+                      backgroundColor: selectedKeys.includes(subItem.key) ? 'rgba(96, 165, 250, 0.1)' : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      textDecoration: 'none',
+                      borderLeft: selectedKeys.includes(subItem.key) ? `2px solid ${SELECTED_COLOR}` : '2px solid transparent',
+                      fontSize: '11px',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selectedKeys.includes(subItem.key)) {
+                        e.currentTarget.style.color = HOVER_COLOR;
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selectedKeys.includes(subItem.key)) {
+                        e.currentTarget.style.color = TEXT_COLOR;
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
+                    onClick={handleMenuClick}
+                  >
+                    <span style={{ fontSize: '14px', minWidth: '16px', display: 'flex', alignItems: 'center' }}>
+                      •
+                    </span>
+                    <span>{subItem.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      // Regular menu items
+      return (
+        <NavLink
+          key={item.key}
+          to={item.path}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px 16px',
+            margin: '6px 0',
+            borderRadius: '8px',
+            color: selectedKeys.includes(item.key) ? SELECTED_COLOR : TEXT_COLOR,
+            backgroundColor: selectedKeys.includes(item.key) ? 'rgba(96, 165, 250, 0.15)' : 'transparent',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            textDecoration: 'none',
+            borderLeft: selectedKeys.includes(item.key) ? `3px solid ${SELECTED_COLOR}` : '3px solid transparent',
+            fontSize: collapsed ? '0' : '12px',
+            width: collapsed ? '100%' : 'auto'
+          }}
+          onMouseEnter={(e) => {
+            if (!selectedKeys.includes(item.key)) {
+              e.currentTarget.style.color = HOVER_COLOR;
+              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+              e.currentTarget.style.transform = 'translateX(4px)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!selectedKeys.includes(item.key)) {
+              e.currentTarget.style.color = TEXT_COLOR;
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.transform = 'translateX(0)';
+            }
+          }}
+          onClick={handleMenuClick}
+        >
+          <span style={{ fontSize: '18px', minWidth: '20px', display: 'flex', alignItems: 'center' }}>
+            {item.icon}
+          </span>
+          {!collapsed && <span>{item.label}</span>}
+        </NavLink>
+      );
+    });
 
   const siderContent = (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -232,8 +329,8 @@ export default function Sidebar({ userType, onCollapse }) {
           trigger={null}
           collapsible
           collapsed={collapsed}
-          width={200}
-          collapsedWidth={60}
+          width={240}
+          collapsedWidth={70}
           style={{
             position: 'fixed',
             left: 0,
