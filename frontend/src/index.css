@@ -77,3 +77,72 @@
     page-break-after: always;
   }
 }
+
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  /* Improve touch targets */
+  .ant-btn,
+  .ant-menu-item,
+  .ant-dropdown-trigger {
+    min-height: 44px !important;
+  }
+  
+  /* Improve readability */
+  .ant-typography {
+    word-wrap: break-word;
+  }
+  
+  /* Prevent horizontal scrolling */
+  .ant-table-content {
+    overflow-x: auto;
+  }
+  
+  /* Better form inputs on mobile */
+  .ant-input,
+  .ant-select-selector {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  
+  /* Card padding on mobile */
+  .ant-card-body {
+    padding: 12px !important;
+  }
+  
+  /* Table adjustments */
+  .ant-table {
+    font-size: 12px;
+  }
+  
+  /* Button spacing */
+  .ant-btn {
+    padding: 4px 12px;
+  }
+}
+
+/* Tablet optimization */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ant-card-body {
+    padding: 16px !important;
+  }
+}
+
+/* Prevent text overflow on all devices */
+.ant-typography {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Improve scrolling on mobile */
+.ant-layout-content {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Better mobile tables */
+.ant-table-small .ant-table-thead > tr > th {
+  padding: 8px !important;
+}
+
+.ant-table-small .ant-table-tbody > tr > td {
+  padding: 8px !important;
+}

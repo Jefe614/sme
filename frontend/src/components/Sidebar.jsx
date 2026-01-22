@@ -28,6 +28,7 @@ export default function Sidebar({ userType, onCollapse }) {
   const [isMobile, setIsMobile] = useState(false);
   const [academicExpanded, setAcademicExpanded] = useState(false);
   const [examsExpanded, setExamsExpanded] = useState(false);
+  const [attendanceExpanded, setAttendanceExpanded] = useState(false);
   const location = useLocation();
   const { user } = useContext(AuthContext);
 
@@ -56,13 +57,14 @@ export default function Sidebar({ userType, onCollapse }) {
     { key: '/school-dashboard/teachers', icon: <SolutionOutlined />, label: 'Teachers', path: '/school-dashboard/teachers' },
     { key: '/school-dashboard/classrooms', icon: <BookOutlined />, label: 'Classes', path: '/school-dashboard/classrooms' },
     { key: '/school-dashboard/exams', icon: <FileTextOutlined />, label: 'Exams & Results', path: '/school-dashboard/exams' },
+    { key: '/school-dashboard/attendance', icon: <UserOutlined />, label: 'Attendance', path: '/school-dashboard/attendance' },
     { key: '/school-dashboard/fees', icon: <MoneyCollectOutlined />, label: 'Fee Management', path: '/school-dashboard/fees' },
-    { key: '/school-dashboard/transport', icon: <CarOutlined />, label: 'Transport', path: '/school-dashboard/transport' },
+    // { key: '/school-dashboard/transport', icon: <CarOutlined />, label: 'Transport', path: '/school-dashboard/transport' },
     { key: '/school-dashboard/academic-years', icon: <CalendarOutlined />, label: 'Academic Calendar', path: '/school-dashboard/academic-years' },
     { key: '/school-dashboard/staff', icon: <UsergroupAddOutlined />, label: 'Staff Management', path: '/school-dashboard/staff' },
-    { key: '/school-dashboard/templates', icon: <FileTextOutlined />, label: 'Document Templates', path: '/school-dashboard/templates' },
+    // { key: '/school-dashboard/templates', icon: <FileTextOutlined />, label: 'Document Templates', path: '/school-dashboard/templates' },
     { key: '/school-dashboard/analytics', icon: <BarChartOutlined />, label: 'Analytics', path: '/school-dashboard/analytics' },
-    { key: '/school-dashboard/reports', icon: <FileTextOutlined />, label: 'Reports', path: '/school-dashboard/reports' },
+    // { key: '/school-dashboard/reports', icon: <FileTextOutlined />, label: 'Reports', path: '/school-dashboard/reports' },
     { key: '/school-dashboard/notifications', icon: <BellOutlined />, label: 'Notifications', path: '/school-dashboard/notifications' },
     { key: '/school-dashboard/settings', icon: <SettingOutlined />, label: 'Settings', path: '/school-dashboard/settings' },
   ];
@@ -70,7 +72,7 @@ export default function Sidebar({ userType, onCollapse }) {
   const menuItems = userType === 'SME' ? smeMenuItems : schoolMenuItems;
   const selectedKeys = [location.pathname];
 
-  const handleMenuClick = ({ key }) => {
+  const handleMenuClick = () => {
     if (isMobile) setMobileVisible(false);
   };
 

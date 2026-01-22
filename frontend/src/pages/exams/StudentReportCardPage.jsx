@@ -65,9 +65,9 @@ export default function StudentReportCardPage() {
         fetchTerms(),
       ]);
 
-      setStudents(studentsRes.data || []);
-      setAcademicYears(academicYearsRes.data || []);
-      setTerms(termsRes.data || []);
+      setStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
+      setAcademicYears(Array.isArray(academicYearsRes.data) ? academicYearsRes.data : []);
+      setTerms(Array.isArray(termsRes.data) ? termsRes.data : []);
     } catch (error) {
       console.error("Error fetching initial data:", error);
       handleApiError(error, "Failed to load data");

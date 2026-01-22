@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 // import { ThemeProvider } from './context/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
+import ParentRoute from './components/ParentRoute';
 import DashboardSidebarLayout from './components/DashboardSidebarLayout';
 
 // Lazy load all page components
@@ -38,6 +39,15 @@ const MarksEntryPage = React.lazy(() => import('./pages/exams/MarksEntryPage'));
 const StudentReportCardPage = React.lazy(() => import('./pages/exams/StudentReportCardPage'));
 const ClassPerformancePage = React.lazy(() => import('./pages/exams/ClassPerformancePage'));
 const GradingSystemManagementPage = React.lazy(() => import('./pages/exams/GradingSystemManagementPage'));
+
+// Attendance Pages
+const AdminAttendanceDashboard = React.lazy(() => import('./pages/attendance/AdminAttendanceDashboard'));
+const TeacherAttendancePage = React.lazy(() => import('./pages/attendance/TeacherAttendancePage'));
+
+// Parent Portal Pages
+const ParentLogin = React.lazy(() => import('./pages/ParentLogin'));
+const ParentDashboard = React.lazy(() => import('./pages/parent/ParentDashboard'));
+const ParentFees = React.lazy(() => import('./pages/parent/ParentFees'));
 
 function App() {
   return (
@@ -108,11 +118,32 @@ function App() {
                         <Route path="class-performance" element={<ClassPerformancePage />} />
                         <Route path="grading-systems" element={<GradingSystemManagementPage />} />
 
+                        {/* Attendance Routes */}
+                        <Route path="attendance" element={<AdminAttendanceDashboard />} />
+                        <Route path="teacher-attendance" element={<TeacherAttendancePage />} />
+
                         {/* Add other School sub-routes here */}
                       </Routes>
                     </Suspense>
                   </DashboardSidebarLayout>
                 </PrivateRoute>
+              }
+            />
+
+            {/* Parent Portal Routes */}
+            <Route path="/parent/login" element={<ParentLogin />} />
+            <Route
+              path="/parent/*"
+              element={
+                <ParentRoute>
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <Routes>
+                      <Route path="dashboard" element={<ParentDashboard />} />
+                      <Route path="fees" element={<ParentFees />} />
+                      {/* Add other parent routes here */}
+                    </Routes>
+                  </Suspense>
+                </ParentRoute>
               }
             />
           </Routes>

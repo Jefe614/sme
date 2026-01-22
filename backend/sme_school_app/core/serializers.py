@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 
 from tenants.models import Company
-from .models import Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate, Notification, AcademicYear, Term, ClassSubjectAssignment, GradingSystem, Exam, ExamMark
+from .models import Attendance, Staff, StudentClass, Subject, Transaction, Student, FeePayment, FeeStructure, FeeDiscount, DocumentTemplate, Notification, AcademicYear, Term, ClassSubjectAssignment, GradingSystem, Exam, ExamMark
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -476,3 +476,37 @@ class ClassPerformanceSerializer(serializers.Serializer):
             'student_rankings': student_rankings,
             'class_average': sum(s['mean_score'] for s in student_rankings) / len(student_rankings) if student_rankings else 0
         }
+
+
+# Attendance Serializers
+class AttendanceSerializer(serializers.ModelSerializer):
+    """Serializer for Attendance model - returns JSON response for API"""
+    student_name = serializers.CharField(source='student.get_full_name', read_only=True)
+    admission_number = serializers.CharField(source='student.admission_number', read_only=True)
+    class_name = serializers.CharField(source='student_class.name', read_only=True)
+    academic_year_name = serializers.CharField(source='academic_year.name', read_only=True)
+    term_name = serializers.CharField(source='term.name', read_only=True)
+    marked_by_name = serializers.CharField(source='marked_by.full_name', read_only=True)
+
+    class Meta:
+        model = Attendance
+        fields = [
+            'id', 'student', 'student_name', 'admission_number', 'student_class',
+            'class_name', 'academic_year', 'academic_year_name', 'term', 'term_name',
+            'date', 'status', 'reason', 'remarks', 'marked_by', 'marked_by_name', 'marked_at'
+        ]
+        read_only_fields = ['marked_at']
+
+
+class AttendanceSummarySerializer(serializers.Serializer):
+    """Serializer for attendance summary data"""
+    student_id = serializers.IntegerField()
+    student_name = serializers.CharField()
+    admission_number = serializers.CharField()
+    class_name = serializers.CharField()
+    total_days = serializers.IntegerField()
+    present_days = serializers.IntegerField()
+    absent_days = serializers.IntegerField()
+    late_days = serializers.IntegerField()
+    excused_days = serializers.IntegerField()
+    attendance_rate = serializers.FloatField()

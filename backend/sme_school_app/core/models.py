@@ -729,25 +729,86 @@ class StaffAttendance(models.Model):
         ('leave', 'On Leave'),
         ('sick', 'Sick Leave'),
     )
-    
+
     company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE)
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='attendance_records')
     date = models.DateField()
     status = models.CharField(max_length=10, choices=ATTENDANCE_STATUS, default='present')
     leave_type = models.CharField(max_length=50, blank=True, null=True)
     leave_reason = models.TextField(blank=True, null=True)
-    
+
     notes = models.TextField(blank=True, null=True)
-    
+
     recorded_by = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True, related_name='recorded_attendances')
-    
+
     class Meta:
         verbose_name = 'Staff Attendance'
         verbose_name_plural = 'Staff Attendance Records'
         db_table = 'staff_attendance'
-    
+
     def __str__(self):
         return f"{self.staff} - {self.date} - {self.status}"
+
+
+# Student Attendance Model
+class Attendance(models.Model):
+    ATTENDANCE_STATUS = (
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('late', 'Late'),
+        ('excused', 'Excused'),
+    )
+
+    company = models.ForeignKey("tenants.Company", on_delete=models.CASCADE, limit_choices_to={'company_type': 'SCHOOL'})
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_records')
+    student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name='attendance_records')
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='attendance_records')
+    term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name='attendance_records')
+
+    date = models.DateField()
+    status = models.CharField(max_length=10, choices=ATTENDANCE_STATUS, default='present')
+
+    # Optional reason and remarks
+    reason = models.TextField(blank=True, null=True, help_text="Reason for absence/late/excused")
+    remarks = models.TextField(blank=True, null=True, help_text="Additional remarks")
+
+    # Audit trail
+    marked_by = models.ForeignKey(
+        Staff,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='marked_attendances',
+        help_text="Staff member who marked this attendance"
+    )
+    marked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Student Attendance'
+        verbose_name_plural = 'Student Attendance Records'
+        db_table = 'student_attendance'
+        unique_together = ['company', 'student', 'date']
+        ordering = ['-date', 'student__first_name', 'student__last_name']
+
+    def clean(self):
+        # Ensure student belongs to the specified class
+        if self.student.student_class != self.student_class:
+            raise ValidationError("Student does not belong to the specified class.")
+
+        # Ensure academic year and term are consistent
+        if self.term.academic_year != self.academic_year:
+            raise ValidationError("Term must belong to the selected academic year.")
+
+        # Ensure date is within academic year range
+        if not (self.academic_year.start_date <= self.date <= self.academic_year.end_date):
+            raise ValidationError("Attendance date must be within the academic year.")
+
+        # Ensure date is within term range
+        if not (self.term.start_date <= self.date <= self.term.end_date):
+            raise ValidationError("Attendance date must be within the term.")
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} - {self.date} - {self.status}"
 
 
 # Document Template Model for customizable school documents

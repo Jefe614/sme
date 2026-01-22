@@ -28,6 +28,7 @@ SHARED_APPS = [
 TENANT_APPS = [
     "core",
     "parent",
+    "teachers"
 ]
 
 INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
@@ -140,7 +141,7 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
-# # SMS Configuration (Africa's Talking)
-# AFRICA_SMS_USERNAME = config('AFRICA_SMS_USERNAME')
-# AFRICA_SMS_API_KEY = config('AFRICA_SMS_API_KEY')
-# SENDER_ID = config('SENDER_ID', default='SCHOOL')
+# SMS Configuration (Africa's Talking)
+AFRICA_SMS_USERNAME = config('AFRICA_SMS_USERNAME', default='sandbox')  # Use 'sandbox' for testing
+AFRICA_SMS_API_KEY = config('AFRICA_SMS_API_KEY', default='')  # Get from Africa's Talking dashboard
+SENDER_ID = config('SENDER_ID', default='SCHOOL')  # Your approved sender ID
